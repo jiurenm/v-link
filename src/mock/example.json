@@ -1,0 +1,122 @@
+{
+  "project_name": "V-Link",
+  "last_updated": "2026-01-05",
+  "songs": [
+    {
+      "id": "pjsk_001",
+      "title": "群青讃歌",
+      "artist": "Eve",
+      "is_pjsk": true,
+      "pjsk_meta": {
+        "group": "Leo/need",
+        "event_name": "1周年記念アニバーサリー歌曲",
+        "difficulty_master": 28
+      },
+      "voca_db_id": 339178,
+      "cover_url": "https://static.vocadb.net/img/Album/mainOrig/30942.jpg?v=11",
+      "versions": [
+        {
+          "type": "2D",
+          "label": "Original MV (Full)",
+          "bvid": "BV19q4y1b764",
+          "duration": 189,
+          "vocalist": "Virtual Singer"
+        },
+        {
+          "type": "3D",
+          "label": "Game MV (Short)",
+          "bvid": "BV1Xy4y1p722",
+          "duration": 189,
+          "vocalist": "Sekai Ver."
+        }
+      ]
+    },
+    {
+      "id": "pjsk_002",
+      "title": "ザムザ (Zamsa)",
+      "artist": "てにをは",
+      "is_pjsk": true,
+      "pjsk_meta": {
+        "group": "25时，在宵崎奏家。",
+        "event_name": "イミテーション・ホワイト",
+        "difficulty_master": 30
+      },
+      "voca_db_id": 412456,
+      "cover_url": "https://static.vocadb.net/img/Album/mainOrig/36260.jpg?v=9",
+      "versions": [
+        {
+          "type": "2D",
+          "label": "Original MV",
+          "bvid": "BV1YV4y1S7f6",
+          "duration": 204,
+          "vocalist": "Kaito"
+        }
+      ]
+    },
+    {
+      "id": "pjsk_003",
+      "title": "トンデモワンダーズ (Tondemo-Wonders)",
+      "artist": "sasakure.UK",
+      "is_pjsk": true,
+      "pjsk_meta": {
+        "group": "Wonderlands×Showtime",
+        "event_name": "スマイルの処方箋",
+        "difficulty_master": 32
+      },
+      "voca_db_id": 332451,
+      "cover_url": "https://static.vocadb.net/img/Album/mainOrig/30403.png?v=5",
+      "versions": [
+        {
+          "type": "2D",
+          "label": "Original MV",
+          "bvid": "BV16b4y1879u",
+          "duration": 210,
+          "vocalist": "Virtual Singer"
+        },
+        {
+          "type": "3D",
+          "label": "Game 3D MV",
+          "bvid": "BV1uU4y1m7m5",
+          "duration": 140,
+          "vocalist": "Sekai Ver."
+        }
+      ]
+    },
+    {
+      "id": "vocaloid_001",
+      "title": "砂の惑星 (Sand Planet)",
+      "artist": "ハチ (Hachi)",
+      "is_pjsk": false,
+      "pjsk_meta": null,
+      "voca_db_id": 169000,
+      "cover_url": "https://static.vocadb.net/img/Album/mainOrig/26381.jpg?v=8",
+      "versions": [
+        {
+          "type": "2D",
+          "label": "Original MV",
+          "bvid": "BV1Ex411776A",
+          "duration": 239,
+          "vocalist": "初音ミク"
+        }
+      ]
+    },
+    {
+      "id": "vocaloid_002",
+      "title": "强风オールバック",
+      "artist": "ゆこぴ",
+      "is_pjsk": false,
+      "pjsk_meta": null,
+      "voca_db_id": 402153,
+      "cover_url": "https://nicovideo.cdn.nimg.jp/thumbnails/41926207/41926207.95161718",
+      "versions": [
+        {
+          "type": "2D",
+          "label": "Original MV",
+          "bvid": "BV19M411J77P",
+          "duration": 136,
+          "vocalist": "歌愛ユキ"
+        }
+      ]
+    }
+  ]
+}

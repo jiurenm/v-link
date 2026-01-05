@@ -1,13 +1,44 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
-import coverImage from '@/assets/images/cover.jpg'
+
+export interface Version {
+  type: '2D' | '3D'
+  label: string
+  bvid?: string
+  duration: number
+  vocalist?: string
+  videoUrl?: string
+}
+
+export interface PJSKMeta {
+  group?: string
+  event_name?: string
+  difficulty_master?: number
+}
+
+export interface Producer {
+  id: string
+  name: string
+  avatar?: string
+  topSongs?: Array<{ id: string; title: string; cover: string }>
+}
 
 export interface Track {
   id: string
   title: string
   artist: string
-  cover: string
+  cover: string // 从 cover_url 映射而来
+  cover_url?: string // JSON 原始字段
   duration: number
+  is_pjsk?: boolean // 是否为 PJSK 歌曲
+  versions?: Version[] // 只有 is_pjsk 为 true 时才有多个版本
+  currentVersion?: '2D' | '3D'
+  pjsk_meta?: PJSKMeta | null // JSON 中可能为 null
+  voca_db_id?: number
+  producer?: Producer
+  illustrator?: Producer
+  playCount?: number
+  lyrics?: Array<{ time: number; text: string; translation?: string }>
 }
 
 export const usePlayerStore = defineStore('player', () => {
@@ -26,6 +57,9 @@ export const usePlayerStore = defineStore('player', () => {
   // 播放模式
   const shuffle = ref(false)
   const repeat = ref<'off' | 'one' | 'all'>('off')
+
+  // 当前版本（2D/3D）
+  const currentVersion = ref<'2D' | '3D'>('2D')
 
   // 计算当前播放的歌曲
   const currentTrack = computed((): Track | null => {
@@ -66,12 +100,16 @@ export const usePlayerStore = defineStore('player', () => {
     if (index >= 0 && index < queue.value.length) {
       const track = queue.value[index]
       if (track) {
+        // 如果播放的是同一首歌曲，保持当前播放进度
+        const isSameTrack = currentIndex.value === index
         currentIndex.value = index
-        currentTime.value = 0
-        duration.value = track.duration
-        if (!isPlaying.value) {
-          isPlaying.value = true
+        // 只有切换到不同歌曲时才重置播放时间
+        if (!isSameTrack) {
+          currentTime.value = 0
         }
+        duration.value = track.duration
+        // 强制设置为播放状态
+        isPlaying.value = true
       }
     }
   }
@@ -143,6 +181,22 @@ export const usePlayerStore = defineStore('player', () => {
     duration.value = dur
   }
 
+  // 切换版本
+  function switchVersion(version: '2D' | '3D') {
+    currentVersion.value = version
+    const track = currentTrack.value
+    if (track?.versions) {
+      const versionData = track.versions.find((v) => v.type === version)
+      if (versionData) {
+        duration.value = versionData.duration
+        // 如果切换到短版且当前进度已超过，对齐到游戏片段
+        if (versionData.duration < track.duration && currentTime.value > versionData.duration) {
+          currentTime.value = versionData.duration - 5 // 对齐到接近结尾
+        }
+      }
+    }
+  }
+
   return {
     // 状态
     queue,
@@ -153,6 +207,7 @@ export const usePlayerStore = defineStore('player', () => {
     volume,
     shuffle,
     repeat,
+    currentVersion,
     // 计算属性
     currentTrack,
     progress,
@@ -168,5 +223,6 @@ export const usePlayerStore = defineStore('player', () => {
     setCurrentTime,
     setVolume,
     setDuration,
+    switchVersion,
   }
 })

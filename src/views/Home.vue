@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePlayerStore, type Track } from '@/stores/player'
-import coverImage from '@/assets/images/cover.jpg'
 import NavBar from '@/components/common/NavBar.vue'
 import FeaturedSection from '@/components/home/FeaturedSection.vue'
 import ChartSection from '@/components/home/ChartSection.vue'
+import exampleData from '@/mock/example.json'
+import { mapSongsToTracks } from '@/utils/trackMapper'
 
 defineOptions({
   name: 'HomePage',
@@ -27,179 +28,75 @@ interface Chart {
   tracks: Track[]
 }
 
-const featuredItems = ref<FeaturedItem[]>([
-  {
-    id: '1',
-    title: '热门单曲推荐',
-    artist: 'Various Artists',
-    cover: coverImage,
-  },
-  {
-    id: '2',
-    title: '最新音乐',
-    artist: 'Various Artists',
-    cover: coverImage,
-  },
-  {
-    id: '3',
-    title: '精选歌单',
-    artist: 'Various Artists',
-    cover: coverImage,
-  },
-  {
-    id: '4',
-    title: '流行音乐',
-    artist: 'Various Artists',
-    cover: coverImage,
-  },
-  {
-    id: '5',
-    title: '电子音乐',
-    artist: 'Various Artists',
-    cover: coverImage,
-  },
-])
+const featuredItems = ref<FeaturedItem[]>([])
 
-const charts = ref<Chart[]>([
-  {
-    id: 'daily',
-    name: '日榜',
-    tracks: [
-      {
-        id: 't1',
-        title: '歌曲标题 1',
-        artist: '艺术家 A',
-        cover: coverImage,
-        duration: 180,
-      },
-      {
-        id: 't2',
-        title: '歌曲标题 2',
-        artist: '艺术家 B',
-        cover: coverImage,
-        duration: 195,
-      },
-      {
-        id: 't3',
-        title: '歌曲标题 3',
-        artist: '艺术家 C',
-        cover: coverImage,
-        duration: 200,
-      },
-      {
-        id: 't4',
-        title: '歌曲标题 4',
-        artist: '艺术家 D',
-        cover: coverImage,
-        duration: 175,
-      },
-      {
-        id: 't5',
-        title: '歌曲标题 5',
-        artist: '艺术家 E',
-        cover: coverImage,
-        duration: 190,
-      },
-    ],
-  },
-  {
-    id: 'weekly',
-    name: '周榜',
-    tracks: [
-      {
-        id: 't6',
-        title: '歌曲标题 6',
-        artist: '艺术家 F',
-        cover: coverImage,
-        duration: 185,
-      },
-      {
-        id: 't7',
-        title: '歌曲标题 7',
-        artist: '艺术家 G',
-        cover: coverImage,
-        duration: 210,
-      },
-      {
-        id: 't8',
-        title: '歌曲标题 8',
-        artist: '艺术家 H',
-        cover: coverImage,
-        duration: 195,
-      },
-      {
-        id: 't9',
-        title: '歌曲标题 9',
-        artist: '艺术家 I',
-        cover: coverImage,
-        duration: 180,
-      },
-      {
-        id: 't10',
-        title: '歌曲标题 10',
-        artist: '艺术家 J',
-        cover: coverImage,
-        duration: 200,
-      },
-    ],
-  },
-  {
-    id: 'monthly',
-    name: '月榜',
-    tracks: [
-      {
-        id: 't11',
-        title: '歌曲标题 11',
-        artist: '艺术家 K',
-        cover: coverImage,
-        duration: 190,
-      },
-      {
-        id: 't12',
-        title: '歌曲标题 12',
-        artist: '艺术家 L',
-        cover: coverImage,
-        duration: 205,
-      },
-      {
-        id: 't13',
-        title: '歌曲标题 13',
-        artist: '艺术家 M',
-        cover: coverImage,
-        duration: 180,
-      },
-      {
-        id: 't14',
-        title: '歌曲标题 14',
-        artist: '艺术家 N',
-        cover: coverImage,
-        duration: 195,
-      },
-      {
-        id: 't15',
-        title: '歌曲标题 15',
-        artist: '艺术家 O',
-        cover: coverImage,
-        duration: 200,
-      },
-    ],
-  },
-])
+const charts = ref<Chart[]>([])
+
+// 从示例数据初始化排行榜和推荐
+onMounted(() => {
+  const tracks = mapSongsToTracks(exampleData.songs as Parameters<typeof mapSongsToTracks>[0])
+
+  charts.value = [
+    {
+      id: 'daily',
+      name: '日榜',
+      tracks: tracks.slice(0, 5), // 取前5首
+    },
+    {
+      id: 'weekly',
+      name: '周榜',
+      tracks: tracks.slice(0, 3), // 取前3首
+    },
+  ]
+
+  // 使用示例数据的前几首作为推荐，使用真实的 track id
+  featuredItems.value = tracks.slice(0, 5).map((track) => ({
+    id: track.id, // 使用真实的歌曲 ID
+    title: track.title,
+    artist: track.artist,
+    cover: track.cover,
+  }))
+})
 
 const goToPlayer = (id: string) => {
-  // 从所有榜单中收集所有歌曲作为播放列表
+  // 从所有榜单和推荐中收集所有歌曲作为播放列表
   const allTracks: Track[] = []
   charts.value.forEach((chart) => {
     allTracks.push(...chart.tracks)
   })
 
+  // 如果点击的是推荐项，需要从完整的示例数据中查找
+  let targetTrack: Track | undefined = allTracks.find((track) => track.id === id)
+
+  // 如果在当前列表中找不到，从完整数据中查找
+  if (!targetTrack) {
+    const allExampleTracks = mapSongsToTracks(
+      exampleData.songs as Parameters<typeof mapSongsToTracks>[0],
+    )
+    targetTrack = allExampleTracks.find((track) => track.id === id)
+    if (targetTrack) {
+      // 使用完整的示例数据作为播放列表
+      const trackIndex = allExampleTracks.findIndex((t) => t.id === id)
+      if (trackIndex >= 0) {
+        playerStore.setQueue(allExampleTracks, trackIndex)
+        playerStore.isPlaying = true
+        playerStore.playTrack(trackIndex)
+        router.push({ name: 'player', params: { id } })
+        return
+      }
+    }
+  }
+
   // 找到当前点击的歌曲索引
   const trackIndex = allTracks.findIndex((track) => track.id === id)
 
-  // 设置播放列表并播放
+  // 设置播放列表并播放指定歌曲
   if (trackIndex >= 0) {
     playerStore.setQueue(allTracks, trackIndex)
-    playerStore.togglePlay()
+    // 强制设置为播放状态
+    playerStore.isPlaying = true
+    // 使用 playTrack 确保切换到指定歌曲
+    playerStore.playTrack(trackIndex)
   }
 
   router.push({ name: 'player', params: { id } })

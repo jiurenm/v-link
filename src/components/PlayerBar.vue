@@ -15,6 +15,14 @@ const isFavorite = ref(false)
 const isLiked = ref(false)
 const showPlaylistModal = ref(false)
 
+// 移动端上滑手势
+const touchStartY = ref(0)
+const touchCurrentY = ref(0)
+const isSwipeUp = ref(false)
+const swipeOffset = ref(0)
+const hasSwiped = ref(false) // 标记是否发生了滑动
+const playerBarRef = ref<HTMLElement | null>(null)
+
 let intervalId: number | null = null
 
 const togglePlay = () => {
@@ -40,9 +48,68 @@ const toggleMute = () => {
 }
 
 const goToPlayer = () => {
+  // 如果发生了滑动，不触发点击
+  if (hasSwiped.value) {
+    hasSwiped.value = false
+    return
+  }
   if (currentTrack.value) {
     router.push({ name: 'player', params: { id: currentTrack.value.id } })
   }
+}
+
+// 移动端上滑手势处理
+const handleBarTouchStart = (e: TouchEvent) => {
+  // 只在移动端启用
+  if (window.innerWidth > 768) return
+  if (e.touches.length !== 1) return
+
+  const touch = e.touches[0]
+  if (!touch) return
+
+  touchStartY.value = touch.clientY
+  isSwipeUp.value = false
+  swipeOffset.value = 0
+  hasSwiped.value = false
+}
+
+const handleBarTouchMove = (e: TouchEvent) => {
+  if (window.innerWidth > 768) return
+  if (e.touches.length !== 1) return
+
+  const touch = e.touches[0]
+  if (!touch) return
+
+  touchCurrentY.value = touch.clientY
+  const deltaY = touchStartY.value - touchCurrentY.value
+
+  // 只允许向上滑动
+  if (deltaY > 0) {
+    isSwipeUp.value = true
+    hasSwiped.value = true
+    swipeOffset.value = Math.min(deltaY, 150) // 限制最大偏移
+    e.preventDefault()
+  }
+}
+
+const handleBarTouchEnd = () => {
+  if (window.innerWidth > 768) return
+
+  const threshold = 80 // 上滑超过 80px 时触发进入播放页
+  const velocity = swipeOffset.value / 150 // 简单的速度计算
+
+  if (swipeOffset.value > threshold || velocity > 0.5) {
+    if (currentTrack.value) {
+      router.push({ name: 'player', params: { id: currentTrack.value.id } })
+    }
+  }
+
+  // 重置状态
+  setTimeout(() => {
+    isSwipeUp.value = false
+    swipeOffset.value = 0
+    hasSwiped.value = false
+  }, 200)
 }
 
 const toggleFavorite = () => {
@@ -116,16 +183,23 @@ onUnmounted(() => {
 <template>
   <div
     v-if="currentTrack"
+    ref="playerBarRef"
     class="fixed bottom-0 left-0 right-0 z-50 bg-black/40 backdrop-blur-xl border-t border-white/10"
+    :style="{
+      transform: isSwipeUp ? `translateY(-${swipeOffset}px)` : '',
+      transition: isSwipeUp ? '' : 'transform 0.2s ease-out',
+    }"
+    @touchstart="handleBarTouchStart"
+    @touchmove="handleBarTouchMove"
+    @touchend="handleBarTouchEnd"
   >
-    <div class="container mx-auto px-4 py-2">
+    <div class="container mx-auto px-2 sm:px-4 py-2">
       <!-- 主要内容区域 -->
-      <div class="flex items-center gap-4">
+      <div class="flex items-center gap-2 sm:gap-4">
         <!-- 左侧：封面和歌曲信息 -->
-        <div class="flex items-center gap-3 flex-1 min-w-0">
+        <div class="flex items-center gap-2 sm:gap-3 flex-1 min-w-0" @click="goToPlayer">
           <div
-            class="flex-shrink-0 w-12 h-12 rounded-full overflow-hidden cursor-pointer relative group"
-            @click="goToPlayer"
+            class="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden cursor-pointer relative group"
           >
             <img
               :src="currentTrack.cover"
@@ -134,7 +208,7 @@ onUnmounted(() => {
             />
             <!-- 放大图标覆盖层 -->
             <div
-              class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40"
+              class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 hidden sm:flex"
             >
               <div
                 class="w-7 h-7 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center"
@@ -156,9 +230,14 @@ onUnmounted(() => {
             </div>
           </div>
           <div class="flex-1 min-w-0">
-            <h4 class="text-white font-medium text-sm line-clamp-1">{{ currentTrack.title }}</h4>
-            <p class="text-white/60 text-xs line-clamp-1">{{ currentTrack.artist }}</p>
-            <div class="mt-1.5">
+            <h4 class="text-white font-medium text-xs sm:text-sm line-clamp-1">
+              {{ currentTrack.title }}
+            </h4>
+            <p class="text-white/60 text-[10px] sm:text-xs line-clamp-1">
+              {{ currentTrack.artist }}
+            </p>
+            <!-- 进度条：移动端隐藏，桌面端显示 -->
+            <div class="mt-1.5 hidden sm:block">
               <ProgressBar
                 :progress="playerStore.progress"
                 :current-time="playerStore.currentTime"
@@ -182,11 +261,11 @@ onUnmounted(() => {
         />
 
         <!-- 右侧：功能按钮 -->
-        <div class="flex items-center gap-2">
-          <!-- 保存/收藏 -->
+        <div class="flex items-center gap-1 sm:gap-2">
+          <!-- 保存/收藏 - 移动端隐藏 -->
           <button
             @click="toggleFavorite"
-            class="text-white/80 hover:text-white transition-colors p-1.5"
+            class="hidden sm:flex text-white/80 hover:text-white transition-colors p-1.5"
             :class="{ 'text-primary': isFavorite }"
           >
             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -196,10 +275,10 @@ onUnmounted(() => {
             </svg>
           </button>
 
-          <!-- 喜欢 -->
+          <!-- 喜欢 - 移动端隐藏 -->
           <button
             @click="toggleLike"
-            class="text-white/80 hover:text-white transition-colors p-1.5"
+            class="hidden sm:flex text-white/80 hover:text-white transition-colors p-1.5"
             :class="{ 'text-red-500': isLiked }"
           >
             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -209,33 +288,36 @@ onUnmounted(() => {
             </svg>
           </button>
 
-          <VolumeControl
-            :volume="playerStore.volume"
-            size="small"
-            @update:volume="handleVolumeUpdate"
-            @mute="toggleMute"
-          />
+          <!-- 音量控制 - 移动端隐藏 -->
+          <div class="hidden sm:block">
+            <VolumeControl
+              :volume="playerStore.volume"
+              size="small"
+              @update:volume="handleVolumeUpdate"
+              @mute="toggleMute"
+            />
+          </div>
 
           <!-- 播放列表 -->
           <button
             @click="togglePlaylist"
             class="text-white/80 hover:text-white transition-colors p-1.5 relative"
           >
-            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+            <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 24 24">
               <path d="M3 18h18v-2H3v2zM3 6v2h18V6H3zm0 7h12v-2H3v2z" />
             </svg>
             <span
               v-if="playerStore.queue.length > 0"
-              class="absolute -top-1 -right-1 w-4 h-4 bg-primary text-white text-[10px] rounded-full flex items-center justify-center"
+              class="absolute -top-1 -right-1 w-3.5 h-3.5 sm:w-4 sm:h-4 bg-primary text-white text-[9px] sm:text-[10px] rounded-full flex items-center justify-center"
             >
               {{ playerStore.queue.length }}
             </span>
           </button>
 
-          <!-- 歌词 -->
+          <!-- 歌词 - 移动端隐藏 -->
           <button
             @click="toggleLyrics"
-            class="text-white/80 hover:text-white transition-colors p-1.5"
+            class="hidden sm:flex text-white/80 hover:text-white transition-colors p-1.5"
           >
             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
               <path
@@ -244,10 +326,10 @@ onUnmounted(() => {
             </svg>
           </button>
 
-          <!-- 关闭 -->
+          <!-- 关闭 - 移动端隐藏 -->
           <button
             @click="closePlayer"
-            class="text-white/80 hover:text-white transition-colors p-1.5"
+            class="hidden sm:flex text-white/80 hover:text-white transition-colors p-1.5"
           >
             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
               <path
@@ -257,6 +339,23 @@ onUnmounted(() => {
           </button>
         </div>
       </div>
+    </div>
+
+    <!-- 移动端上滑提示 -->
+    <div
+      v-if="isSwipeUp && swipeOffset > 0"
+      class="absolute -top-12 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-full bg-black/60 backdrop-blur-md text-white text-sm flex items-center gap-2 pointer-events-none transition-opacity"
+      :style="{ opacity: Math.min(1, swipeOffset / 50) }"
+    >
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M5 10l7-7m0 0l7 7m-7-7v18"
+        />
+      </svg>
+      <span>上滑进入播放页</span>
     </div>
 
     <!-- 播放列表弹窗 -->

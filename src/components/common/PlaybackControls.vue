@@ -71,10 +71,15 @@ const playButtonSizeClass = {
         'rounded-full bg-primary text-white flex items-center justify-center hover:scale-110 transition-transform shadow-lg hover:bg-primary-600',
         playButtonSizeClass[size],
       ]"
+      style="
+        box-shadow:
+          0 0 20px rgba(57, 197, 187, 0.5),
+          0 0 40px rgba(57, 197, 187, 0.3);
+      "
     >
       <svg
         v-if="!isPlaying"
-        :class="['ml-1', size === 'small' ? 'w-4 h-4' : size === 'medium' ? 'w-5 h-5' : 'w-8 h-8']"
+        :class="size === 'small' ? 'w-4 h-4' : size === 'medium' ? 'w-5 h-5' : 'w-8 h-8'"
         fill="currentColor"
         viewBox="0 0 24 24"
       >
