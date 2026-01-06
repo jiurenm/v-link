@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
-import { usePlayerStore, type Track } from '@/stores/player'
+import { usePlayerStore, type Track, type VersionType } from '@/stores/player'
 import { extractDominantColor, generateGradient } from '@/utils/colorExtractor'
 import CanvasArea from './CanvasArea.vue'
 import VersionSelector from './VersionSelector.vue'
@@ -63,22 +63,54 @@ const check39Mode = (time: number) => {
   }
 }
 
-// 触发霓虹闪烁
+// 触发霓虹闪烁 - 增强版
 const triggerNeonFlash = () => {
-  document.body.style.transition = 'box-shadow 0.3s ease'
+  // 给整个播放器添加强烈的霓虹边框效果
+  if (playerRef.value) {
+    playerRef.value.style.transition = 'box-shadow 0.2s ease-out, border 0.2s ease-out'
+    playerRef.value.style.boxShadow =
+      '0 0 80px rgba(57, 197, 187, 1), 0 0 160px rgba(57, 197, 187, 0.8), inset 0 0 60px rgba(57, 197, 187, 0.3)'
+    playerRef.value.style.border = '2px solid rgba(57, 197, 187, 0.8)'
+  }
+
+  // 给 body 添加全局闪烁
+  document.body.style.transition = 'box-shadow 0.2s ease-out'
   document.body.style.boxShadow =
-    '0 0 100px rgba(57, 197, 187, 0.8), inset 0 0 100px rgba(57, 197, 187, 0.2)'
+    '0 0 150px rgba(57, 197, 187, 0.9), inset 0 0 120px rgba(57, 197, 187, 0.3)'
 
   if (neonFlashTimeout) {
     clearTimeout(neonFlashTimeout)
   }
 
+  // 创建闪烁动画效果
+  let flashCount = 0
+  const flashInterval = setInterval(() => {
+    flashCount++
+    if (flashCount > 6) {
+      // 闪烁6次后停止
+      clearInterval(flashInterval)
+      return
+    }
+
+    if (playerRef.value) {
+      const intensity = flashCount % 2 === 0 ? 1 : 0.6
+      playerRef.value.style.boxShadow = `0 0 ${80 * intensity}px rgba(57, 197, 187, ${intensity}), 0 0 ${160 * intensity}px rgba(57, 197, 187, ${intensity * 0.8}), inset 0 0 ${60 * intensity}px rgba(57, 197, 187, ${intensity * 0.3})`
+    }
+  }, 150)
+
+  // 2秒后完全移除效果
   neonFlashTimeout = window.setTimeout(() => {
+    clearInterval(flashInterval)
+    if (playerRef.value) {
+      playerRef.value.style.boxShadow = ''
+      playerRef.value.style.border = ''
+      playerRef.value.style.transition = ''
+    }
     document.body.style.boxShadow = ''
     setTimeout(() => {
       document.body.style.transition = ''
     }, 300)
-  }, 1000)
+  }, 2000)
 }
 
 // 提取封面主色
@@ -95,7 +127,7 @@ const extractColor = async () => {
 }
 
 // 版本切换处理（只有 PJSK 歌曲才支持）
-const handleVersionChange = async (version: '2D' | '3D') => {
+const handleVersionChange = async (version: VersionType) => {
   if (!props.track?.is_pjsk || version === currentVersion.value) return
 
   isSwitchingVersion.value = true
@@ -434,12 +466,5 @@ onUnmounted(() => {
 .immersive-player {
   /* 禁止使用纯白背景 */
   background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
-}
-
-/* 移除 glass-panel 样式，歌词区域不再使用背景 */
-
-/* 39 模式霓虹边框效果 */
-.immersive-player:has(+ .neon-active) {
-  box-shadow: 0 0 50px rgba(57, 197, 187, 0.8);
 }
 </style>

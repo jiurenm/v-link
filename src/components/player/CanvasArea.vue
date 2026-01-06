@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-import type { Track } from '@/stores/player'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
+import { usePlayerStore } from '@/stores/player'
+import type { Track, VersionType } from '@/stores/player'
 
 interface Props {
   track: Track | null
   isPlaying: boolean
-  currentVersion: '2D' | '3D'
+  currentVersion: VersionType
   isSwitching?: boolean
   currentTime?: number
 }
@@ -15,226 +16,311 @@ const props = withDefaults(defineProps<Props>(), {
   currentTime: 0,
 })
 
+const playerStore = usePlayerStore()
+
+// --- DOM 引用 ---
 const canvasRef = ref<HTMLDivElement>()
 const videoRef = ref<HTMLVideoElement>()
 const audioRef = ref<HTMLAudioElement>()
+
+// --- 响应式状态 ---
+const localTime = ref(0) // 核心：用于驱动本地进度条/UI 的高频时间
 const parallaxX = ref(0)
 const parallaxY = ref(0)
 const glitchProgress = ref(0)
 
-// 计算当前版本的视频URL（只有 PJSK 歌曲才可能有视频）
-const currentVideoUrl = computed(() => {
-  if (!props.track?.is_pjsk || !props.track?.versions) return null
-  const version = props.track.versions.find((v) => v.type === props.currentVersion)
-  return version?.videoUrl || null
+// --- 内部变量 (非响应式，避免性能开销) ---
+let rafId: number | null = null
+let lastStoreSyncTime = 0
+let isSeeking = false
+let isChangingSource = false
+let glitchInterval: number | null = null
+
+// --- 计算属性 ---
+const isNoMVMode = computed(() => props.currentVersion === '无MV')
+
+// 计算当前应播放的资源 URL
+const activeMediaUrl = computed(() => {
+  if (!props.track) return null
+  if (isNoMVMode.value) {
+    // 无MV模式逻辑：尝试寻找2D资源获取音频，否则取列表第一个
+    const audioSource =
+      props.track.versions?.find((v) => v.type === '2D') || props.track.versions?.[0]
+    return audioSource?.videoUrl || null
+  }
+  return props.track.versions?.find((v) => v.type === props.currentVersion)?.videoUrl || null
 })
 
-// 音频连续性：使用独立的audio元素
-const audioUrl = computed(() => {
-  // 如果有独立的音频URL，使用它；否则尝试从2D版本获取（通常2D版本包含完整音频）
-  if (!props.track?.versions) return null
-  const audioVersion = props.track.versions.find((v) => v.type === '2D')
-  return audioVersion?.videoUrl || null
-})
+// 获取当前处于活跃状态的 DOM 元素
+const activeMediaRef = computed(() => (isNoMVMode.value ? audioRef.value : videoRef.value))
 
-// 视差效果处理
-let gyroHandler: ((e: DeviceOrientationEvent) => void) | null = null
-let mouseHandler: ((e: MouseEvent) => void) | null = null
+// --- 核心方法：时间同步调度器 ---
 
-const handleParallax = (x: number, y: number) => {
-  parallaxX.value = x * 0.02 // 微小的位移
-  parallaxY.value = y * 0.02
-}
+const startUpdateLoop = () => {
+  if (rafId) cancelAnimationFrame(rafId)
 
-onMounted(() => {
-  // 陀螺仪支持（移动端）
-  if (window.DeviceOrientationEvent) {
-    gyroHandler = (e: DeviceOrientationEvent) => {
-      if (e.gamma !== null && e.beta !== null) {
-        handleParallax(e.gamma, e.beta)
+  const loop = () => {
+    const el = activeMediaRef.value
+    if (el && !el.paused && !isSeeking && !isChangingSource) {
+      // 1. 高频更新本地值 (60fps)，用于组件内部渲染
+      localTime.value = el.currentTime
+
+      // 2. 节流更新 Store (每秒同步一次全局状态，减少渲染压力)
+      const now = performance.now()
+      if (now - lastStoreSyncTime > 1000) {
+        playerStore.setCurrentTime(el.currentTime)
+        lastStoreSyncTime = now
       }
     }
-    window.addEventListener('deviceorientation', gyroHandler)
+    rafId = requestAnimationFrame(loop)
   }
+  rafId = requestAnimationFrame(loop)
+}
 
-  // 鼠标移动支持（桌面端）
-  mouseHandler = (e: MouseEvent) => {
-    if (canvasRef.value) {
-      const rect = canvasRef.value.getBoundingClientRect()
-      const centerX = rect.left + rect.width / 2
-      const centerY = rect.top + rect.height / 2
-      const x = (e.clientX - centerX) / rect.width
-      const y = (e.clientY - centerY) / rect.height
-      handleParallax(x * 100, y * 100)
+const stopUpdateLoop = () => {
+  if (rafId) {
+    cancelAnimationFrame(rafId)
+    rafId = null
+  }
+}
+
+// --- 媒体控制逻辑 ---
+
+const initMedia = async () => {
+  const el = activeMediaRef.value
+  const url = activeMediaUrl.value
+
+  if (!el || !url) return
+
+  try {
+    isChangingSource = true
+    el.pause()
+    el.load() // 强制重新加载资源
+
+    // 等待元数据加载以获取正确的时间控制权
+    await new Promise<void>((resolve, reject) => {
+      const timeout = setTimeout(() => reject('Timeout'), 8000)
+      el.onloadedmetadata = () => {
+        clearTimeout(timeout)
+        resolve()
+      }
+      el.onerror = () => reject('Load Error')
+    })
+
+    // 同步当前状态
+    el.volume = playerStore.volume
+    el.currentTime = props.currentTime // 继承切换前的时间点
+    localTime.value = props.currentTime
+
+    if (props.isPlaying) {
+      await el.play().catch(() => console.warn('Autoplay blocked'))
     }
+  } catch (err) {
+    console.error('Media initialization failed:', err)
+  } finally {
+    isChangingSource = false
   }
-  window.addEventListener('mousemove', mouseHandler)
-})
+}
 
-onUnmounted(() => {
-  if (gyroHandler) {
-    window.removeEventListener('deviceorientation', gyroHandler)
-  }
-  if (mouseHandler) {
-    window.removeEventListener('mousemove', mouseHandler)
-  }
-})
+// --- 监听器 ---
 
-// 同步视频和音频播放状态
+// 1. 监听 URL 变化（切换版本或歌曲）
+watch(
+  [activeMediaUrl, isNoMVMode],
+  async () => {
+    await nextTick() // 等待 v-if 切换 DOM
+    await initMedia()
+  },
+  { immediate: true },
+)
+
+// 2. 监听外部播放/暂停指令
 watch(
   () => props.isPlaying,
   (playing) => {
-    if (videoRef.value) {
-      if (playing) {
-        videoRef.value.play().catch(() => {
-          // 忽略播放错误
-        })
-      } else {
-        videoRef.value.pause()
-      }
-    }
-    if (audioRef.value) {
-      if (playing) {
-        audioRef.value.play().catch(() => {
-          // 忽略播放错误
-        })
-      } else {
-        audioRef.value.pause()
-      }
+    const el = activeMediaRef.value
+    if (!el || isChangingSource) return
+
+    if (playing) {
+      el.play().catch(() => {})
+      startUpdateLoop()
+    } else {
+      el.pause()
+      stopUpdateLoop()
+      playerStore.setCurrentTime(el.currentTime) // 暂停时同步最终精确时间
     }
   },
+  { immediate: true },
 )
 
-// 同步播放时间
+// 3. 监听外部拖动进度条 (Seek)
 watch(
   () => props.currentTime,
   (time) => {
-    if (videoRef.value && Math.abs(videoRef.value.currentTime - time) > 0.5) {
-      videoRef.value.currentTime = time
-    }
-    if (audioRef.value && Math.abs(audioRef.value.currentTime - time) > 0.5) {
-      audioRef.value.currentTime = time
+    const el = activeMediaRef.value
+    if (!el || isChangingSource) return
+
+    // 只有当外部时间与本地媒体时间差异超过 1s 时（代表用户点击了进度条），才执行 seek
+    if (Math.abs(el.currentTime - time) > 1) {
+      isSeeking = true
+      el.currentTime = time
+      localTime.value = time
+
+      // 监听 seek 完成
+      const onSeeked = () => {
+        isSeeking = false
+        el.removeEventListener('seeked', onSeeked)
+      }
+      el.addEventListener('seeked', onSeeked)
     }
   },
 )
 
-// Glitch 转场效果
+// 4. 音量同步
+watch(
+  () => playerStore.volume,
+  (v) => {
+    if (activeMediaRef.value) activeMediaRef.value.volume = v
+  },
+)
+
+// --- 装饰性效果 (视差 & Glitch) ---
+
+const handleMouseMove = (e: MouseEvent) => {
+  if (!canvasRef.value) return
+  const { left, top, width, height } = canvasRef.value.getBoundingClientRect()
+  const x = (e.clientX - (left + width / 2)) / width
+  const y = (e.clientY - (top + height / 2)) / height
+
+  // 使用 CSS 变量或直接赋值
+  parallaxX.value = x * 25
+  parallaxY.value = y * 25
+}
+
 watch(
   () => props.isSwitching,
   (switching) => {
+    if (glitchInterval) clearInterval(glitchInterval)
     if (switching) {
       glitchProgress.value = 0
-      const interval = setInterval(() => {
-        glitchProgress.value += 3.9 // 39% 进度
-        if (glitchProgress.value >= 100) {
-          clearInterval(interval)
-          glitchProgress.value = 0
-        }
+      glitchInterval = window.setInterval(() => {
+        glitchProgress.value += 4.5
+        if (glitchProgress.value >= 100) clearInterval(glitchInterval!)
       }, 50)
     }
   },
 )
 
-// 版本切换时保持音频连续性
-watch(
-  () => props.currentVersion,
-  () => {
-    // 切换版本时，视频会重新加载，但音频继续播放
-    if (audioRef.value && props.isPlaying) {
-      // 音频已经在播放，不需要额外操作
+// --- 生命周期 ---
+
+onMounted(() => {
+  window.addEventListener('mousemove', handleMouseMove, { passive: true })
+  if (props.isPlaying) startUpdateLoop()
+
+  // 处理移动端自动播放限制
+  const unlock = () => {
+    if (props.isPlaying && activeMediaRef.value?.paused) {
+      activeMediaRef.value.play().catch(() => {})
     }
-  },
-)
+    document.removeEventListener('click', unlock)
+  }
+  document.addEventListener('click', unlock)
+})
+
+onUnmounted(() => {
+  stopUpdateLoop()
+  window.removeEventListener('mousemove', handleMouseMove)
+  if (glitchInterval) clearInterval(glitchInterval)
+})
 </script>
 
 <template>
   <div
     ref="canvasRef"
-    class="canvas-area relative w-full overflow-hidden"
-    :style="{ height: '45vh' }"
+    class="canvas-area relative w-full overflow-hidden bg-[#0a0a0a]"
+    style="aspect-ratio: 16/9; max-height: 45vh"
   >
-    <!-- 背景层 - 封面/视频 -->
     <div
-      class="absolute inset-0 transition-all duration-500"
+      class="absolute inset-0 transition-transform duration-100 ease-out"
       :style="{
-        transform: `translate(${parallaxX}px, ${parallaxY}px) scale(1.1)`,
+        transform: `translate3d(${parallaxX}px, ${parallaxY}px, 0) scale(1.12)`,
+        willChange: 'transform',
       }"
     >
-      <!-- 视频播放器（静音，仅用于显示） -->
       <video
-        v-if="currentVideoUrl"
+        v-if="!isNoMVMode && activeMediaUrl"
         ref="videoRef"
-        :src="currentVideoUrl"
-        :muted="true"
+        :key="activeMediaUrl"
+        :src="activeMediaUrl"
         loop
-        class="w-full h-full object-cover"
-        :class="{ 'opacity-0': isSwitching }"
+        muted
+        playsinline
+        class="w-full h-full object-cover transition-opacity duration-700"
+        :class="{ 'opacity-0': isSwitching || isChangingSource }"
       />
-      <!-- 封面图片 -->
+
       <img
-        v-else-if="track?.cover"
+        v-if="isNoMVMode && track?.cover"
         :src="track.cover"
-        :alt="track.title"
-        class="w-full h-full object-cover"
-        :class="{ 'opacity-0': isSwitching }"
+        class="w-full h-full object-cover transition-opacity duration-700"
+        :class="{ 'opacity-0': isSwitching || isChangingSource }"
       />
     </div>
 
-    <!-- 独立的音频播放器（用于音频连续性） -->
-    <audio v-if="audioUrl" ref="audioRef" :src="audioUrl" loop preload="auto" class="hidden" />
-
-    <!-- Glitch 占位符（切换时显示） -->
-    <div
-      v-if="isSwitching"
-      class="absolute inset-0 flex items-center justify-center bg-black/80 backdrop-blur-sm"
-    >
-      <div class="text-center">
-        <div class="text-6xl font-mono text-primary mb-4 glitch-text">
-          {{ Math.floor(glitchProgress) }}%
-        </div>
-        <div class="text-white/60 text-sm">SEKAI 加载中...</div>
-      </div>
-    </div>
-
-    <!-- 氛围光效果 -->
-    <div
-      class="absolute inset-0 pointer-events-none"
-      :style="{
-        background: `radial-gradient(circle at center, rgba(57, 197, 187, 0.2) 0%, transparent 70%)`,
-      }"
+    <audio
+      v-if="isNoMVMode && activeMediaUrl"
+      ref="audioRef"
+      :src="activeMediaUrl"
+      loop
+      class="hidden"
     />
 
-    <!-- 底部渐变遮罩 - 让图片消融在背景中 -->
+    <Transition name="fade">
+      <div
+        v-if="isSwitching || isChangingSource"
+        class="absolute inset-0 z-20 flex items-center justify-center bg-black/60 backdrop-blur-md"
+      >
+        <div class="text-center">
+          <div class="glitch-text text-5xl font-mono text-[#39c5bb] mb-2">
+            {{ Math.floor(glitchProgress) }}%
+          </div>
+          <div class="text-[10px] tracking-[0.2em] text-white/40 uppercase">
+            Initialising Link...
+          </div>
+        </div>
+      </div>
+    </Transition>
+
+    <div class="absolute inset-0 pointer-events-none bg-radial-gradient" />
     <div
-      class="absolute bottom-0 left-0 right-0 h-32 pointer-events-none"
-      :style="{
-        background:
-          'linear-gradient(to bottom, transparent 0%, rgba(10, 10, 10, 0.3) 50%, rgba(10, 10, 10, 0.8) 100%)',
-      }"
+      class="absolute bottom-0 left-0 right-0 h-40 pointer-events-none bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/40 to-transparent"
     />
   </div>
 </template>
 
 <style scoped>
+.bg-radial-gradient {
+  background: radial-gradient(circle at center, transparent 0%, rgba(0, 0, 0, 0.4) 100%);
+}
+
 .glitch-text {
-  animation: glitch 0.3s infinite;
+  animation: glitch 0.4s infinite;
   text-shadow:
-    2px 0 #39c5bb,
-    -2px 0 #ff00ff;
+    2px 0 #ff00ff,
+    -2px 0 #00ffff;
 }
 
 @keyframes glitch {
-  0%,
-  100% {
+  0% {
     transform: translate(0);
   }
 
   20% {
-    transform: translate(-2px, 2px);
+    transform: translate(-2px, 1px);
   }
 
   40% {
-    transform: translate(-2px, -2px);
+    transform: translate(-1px, -1px);
   }
 
   60% {
@@ -242,7 +328,21 @@ watch(
   }
 
   80% {
-    transform: translate(2px, -2px);
+    transform: translate(1px, -2px);
   }
+
+  100% {
+    transform: translate(0);
+  }
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.4s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>

@@ -19,14 +19,14 @@
           "type": "2D",
           "label": "Original MV (Full)",
           "bvid": "BV19q4y1b764",
-          "duration": 189,
+          "duration": 289,
           "vocalist": "Virtual Singer"
         },
         {
           "type": "3D",
           "label": "Game MV (Short)",
           "bvid": "BV1Xy4y1p722",
-          "duration": 189,
+          "duration": 289,
           "vocalist": "Sekai Ver."
         }
       ]
@@ -48,8 +48,17 @@
           "type": "2D",
           "label": "Original MV",
           "bvid": "BV1YV4y1S7f6",
-          "duration": 204,
-          "vocalist": "Kaito"
+          "duration": 219,
+          "vocalist": "Kaito",
+          "videoUrl": "http://localhost:5173/%E3%82%B6%E3%83%A0%E3%82%B6_2D.mp4"
+        },
+        {
+          "type": "3D",
+          "label": "Original MV",
+          "bvid": "BV1YV4y1S7f6",
+          "duration": 115,
+          "vocalist": "Kaito",
+          "videoUrl": "http://localhost:5173/%E3%82%B6%E3%83%A0%E3%82%B6_3D.mp4"
         }
       ]
     },

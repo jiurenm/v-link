@@ -10,6 +10,8 @@ export interface Version {
   videoUrl?: string
 }
 
+export type VersionType = '2D' | '3D' | '无MV'
+
 export interface PJSKMeta {
   group?: string
   event_name?: string
@@ -32,7 +34,7 @@ export interface Track {
   duration: number
   is_pjsk?: boolean // 是否为 PJSK 歌曲
   versions?: Version[] // 只有 is_pjsk 为 true 时才有多个版本
-  currentVersion?: '2D' | '3D'
+  currentVersion?: VersionType
   pjsk_meta?: PJSKMeta | null // JSON 中可能为 null
   voca_db_id?: number
   producer?: Producer
@@ -58,8 +60,8 @@ export const usePlayerStore = defineStore('player', () => {
   const shuffle = ref(false)
   const repeat = ref<'off' | 'one' | 'all'>('off')
 
-  // 当前版本（2D/3D）
-  const currentVersion = ref<'2D' | '3D'>('2D')
+  // 当前版本（2D/3D/无MV）
+  const currentVersion = ref<VersionType>('2D')
 
   // 计算当前播放的歌曲
   const currentTrack = computed((): Track | null => {
@@ -182,17 +184,21 @@ export const usePlayerStore = defineStore('player', () => {
   }
 
   // 切换版本
-  function switchVersion(version: '2D' | '3D') {
+  function switchVersion(version: VersionType) {
     currentVersion.value = version
     const track = currentTrack.value
-    if (track?.versions) {
+    if (version === '无MV') {
+      // 无MV模式，使用歌曲总时长
+      if (track) {
+        duration.value = track.duration
+        currentTime.value = 0
+      }
+    } else if (track?.versions) {
       const versionData = track.versions.find((v) => v.type === version)
       if (versionData) {
         duration.value = versionData.duration
-        // 如果切换到短版且当前进度已超过，对齐到游戏片段
-        if (versionData.duration < track.duration && currentTime.value > versionData.duration) {
-          currentTime.value = versionData.duration - 5 // 对齐到接近结尾
-        }
+        // 切换版本时重置时间到0，因为不同版本的时间长度不同
+        currentTime.value = 0
       }
     }
   }

@@ -1,32 +1,41 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { Track } from '@/stores/player'
+import type { Track, VersionType } from '@/stores/player'
 
 interface Props {
   track: Track | null
-  currentVersion: '2D' | '3D'
+  currentVersion: VersionType
 }
 
 const props = defineProps<Props>()
 
 const emit = defineEmits<{
-  'version-change': [version: '2D' | '3D']
+  'version-change': [version: VersionType]
 }>()
 
-const availableVersions = computed(() => {
-  // 只有 PJSK 歌曲且有多个版本时才显示版本选择器
-  if (!props.track?.is_pjsk || !props.track?.versions || props.track.versions.length <= 1) {
+const availableVersions = computed<VersionType[]>(() => {
+  // 只有 PJSK 歌曲时才显示版本选择器
+  if (!props.track?.is_pjsk) {
     return []
   }
-  return props.track.versions.map((v) => v.type)
+
+  const versions: VersionType[] = ['无MV']
+
+  // 如果有版本信息，添加 2D 和 3D 选项
+  if (props.track.versions && props.track.versions.length > 0) {
+    const videoVersions = props.track.versions.map((v) => v.type as '2D' | '3D')
+    versions.push(...videoVersions)
+  }
+
+  return versions
 })
 
 // 是否应该显示版本选择器
 const shouldShow = computed(() => {
-  return props.track?.is_pjsk === true && availableVersions.value.length > 1
+  return props.track?.is_pjsk === true && availableVersions.value.length > 0
 })
 
-const handleVersionClick = (version: '2D' | '3D') => {
+const handleVersionClick = (version: VersionType) => {
   if (version === props.currentVersion) return
 
   // 触觉反馈（移动端）
