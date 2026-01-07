@@ -29,6 +29,7 @@ const showIllustratorCard = ref(false)
 const showTranslation = ref(false)
 const dominantColor = ref({ r: 57, g: 197, b: 187 }) // 默认 primary 色
 const backgroundGradient = ref('linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%)')
+const blurredCoverUrl = ref<string | null>(null)
 
 // 移动端下滑手势
 const touchStartY = ref(0)
@@ -121,6 +122,7 @@ const extractColor = async () => {
     const color = await extractDominantColor(props.track.cover)
     dominantColor.value = color
     backgroundGradient.value = generateGradient(color, 0.2)
+    blurredCoverUrl.value = props.track.cover
   } catch (error) {
     console.warn('颜色提取失败:', error)
   }
@@ -294,7 +296,6 @@ onUnmounted(() => {
     class="immersive-player fixed inset-0 z-40 overflow-hidden"
     :class="{ 'touch-none': isDragging }"
     :style="{
-      background: backgroundGradient,
       transform: isDragging ? `translateY(${dragOffset}px)` : isEntering ? 'translateY(100%)' : '',
       opacity: isDragging ? Math.max(0.5, 1 - dragOffset / 400) : isEntering ? 0 : 1,
     }"
@@ -302,25 +303,90 @@ onUnmounted(() => {
     @touchmove="handleTouchMove"
     @touchend="handleTouchEnd"
   >
+    <!-- 模糊背景层 -->
+    <div
+      v-if="blurredCoverUrl"
+      class="absolute inset-0 z-0"
+      :style="{
+        backgroundImage: `url(${blurredCoverUrl})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        filter: 'blur(40px) brightness(0.4)',
+        transform: 'scale(1.1)',
+      }"
+    />
+    <div
+      class="absolute inset-0 z-0"
+      :style="{
+        background: backgroundGradient,
+        opacity: 0.6,
+      }"
+    />
+
     <!-- 三段式布局容器 -->
-    <div class="h-full flex flex-col">
-      <!-- A. Canvas Area (45% 高度) -->
-      <div class="flex-shrink-0" style="height: 45vh">
-        <CanvasArea
-          :track="track"
-          :is-playing="playerStore.isPlaying"
-          :current-version="currentVersion"
-          :is-switching="isSwitchingVersion"
-          :current-time="playerStore.currentTime"
-        />
+    <div class="relative z-10 flex flex-col pb-4" style="height: 100vh; box-sizing: border-box">
+      <!-- A. Canvas Area (48% 高度) - 居中布局 -->
+      <div
+        class="flex-shrink-0 flex items-center justify-center px-4 pt-10 pb-3"
+        style="height: 48vh"
+      >
+        <div class="flex items-center w-full max-w-7xl gap-4">
+          <!-- 左侧厨力插件 -->
+          <div class="hidden lg:flex flex-col items-center justify-center flex-shrink-0 w-32">
+            <div
+              v-if="track?.pjsk_meta?.group"
+              class="glass-widget px-4 py-3 rounded-lg text-center"
+            >
+              <div class="text-xs text-white/40 mb-1" style="letter-spacing: 0.1em">PJSK</div>
+              <div class="text-sm font-semibold text-white">{{ track.pjsk_meta.group }}</div>
+            </div>
+          </div>
+
+          <!-- 视频区域 - 居中 -->
+          <div
+            class="flex-1 mx-auto w-full"
+            style="max-width: min(100%, calc(48vh * 16 / 9)); aspect-ratio: 16/9"
+          >
+            <CanvasArea
+              :track="track"
+              :is-playing="playerStore.isPlaying"
+              :current-version="currentVersion"
+              :is-switching="isSwitchingVersion"
+              :current-time="playerStore.currentTime"
+            />
+          </div>
+
+          <!-- 右侧厨力插件 -->
+          <div class="hidden lg:flex flex-col items-center justify-center flex-shrink-0 w-32 gap-3">
+            <a
+              v-if="track?.voca_db_id"
+              :href="`https://vocadb.net/S/${track.voca_db_id}`"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="glass-widget px-4 py-2 rounded-lg text-center hover:bg-white/10 transition-colors"
+            >
+              <div class="text-xs text-white/40 mb-1">VocaDB</div>
+              <div class="text-sm font-semibold text-primary">查看详情</div>
+            </a>
+            <div
+              v-if="track?.pjsk_meta?.difficulty_master"
+              class="glass-widget px-4 py-2 rounded-lg text-center"
+            >
+              <div class="text-xs text-white/40 mb-1">Master</div>
+              <div class="text-sm font-semibold text-white">
+                {{ track.pjsk_meta.difficulty_master }}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <!-- B. The Switchboard (15% 高度) -->
+      <!-- B. The Switchboard (16% 高度) -->
       <div
-        class="flex-shrink-0 flex flex-col items-center justify-center gap-3 px-4 py-2"
-        style="min-height: 15vh"
+        class="flex-shrink-0 flex flex-col items-center justify-center gap-4 px-4 py-2 mt-6"
+        style="min-height: 16vh"
       >
-        <!-- 版本选择器 - 移到播放控制器上方，缩小尺寸 -->
+        <!-- 版本选择器 - 半透明胶囊状，放在视频正下方 -->
         <VersionSelector
           v-if="track?.is_pjsk && track?.versions && track.versions.length > 1"
           :track="track"
@@ -328,12 +394,23 @@ onUnmounted(() => {
           @version-change="handleVersionChange"
         />
 
+        <!-- 葱形进度条 -->
+        <div class="w-full max-w-2xl px-4">
+          <LeekSlider
+            :progress="playerStore.progress"
+            :current-time="playerStore.currentTime"
+            :duration="playerStore.duration"
+            :is-playing="playerStore.isPlaying"
+            @seek="handleSeek"
+          />
+        </div>
+
         <!-- 播放控制 -->
         <PlaybackControls
           :is-playing="playerStore.isPlaying"
           :shuffle="playerStore.shuffle"
           :repeat="playerStore.repeat"
-          size="large"
+          size="medium"
           @play="togglePlay"
           @pause="togglePlay"
           @previous="playerStore.previousTrack()"
@@ -343,13 +420,13 @@ onUnmounted(() => {
         />
       </div>
 
-      <!-- C. Metadata & Leek Bar (40% 高度) -->
-      <div class="flex-shrink-0 overflow-y-auto px-6 pb-6 pt-2" style="height: 40vh">
-        <div class="max-w-2xl mx-auto space-y-6">
-          <!-- 歌曲信息 -->
-          <div class="text-center pt-2">
+      <!-- C. Metadata & Leek Bar (36% 高度) -->
+      <div class="flex-1 overflow-y-auto px-6 pt-6 scrollbar-hide" style="min-height: 0">
+        <div class="max-w-2xl mx-auto space-y-8">
+          <!-- 歌曲信息卡片 -->
+          <div class="glass-card p-8 rounded-2xl text-center">
             <h2
-              class="text-4xl font-bold text-white mb-2"
+              class="text-4xl font-bold text-white mb-6"
               style="
                 text-shadow:
                   0 2px 8px rgba(0, 0, 0, 0.5),
@@ -380,20 +457,12 @@ onUnmounted(() => {
           </div>
 
           <!-- 传说入进度条 -->
-          <LegendProgress v-if="track?.playCount" :play-count="track.playCount" />
-
-          <!-- 葱形进度条 -->
-          <div class="p-4">
-            <LeekSlider
-              :progress="playerStore.progress"
-              :current-time="playerStore.currentTime"
-              :duration="playerStore.duration"
-              @seek="handleSeek"
-            />
+          <div v-if="track?.playCount" class="glass-card p-4 rounded-xl">
+            <LegendProgress :play-count="track.playCount" />
           </div>
 
-          <!-- 歌词流 - 去掉背景色，直接浮在背景上 -->
-          <div class="p-6">
+          <!-- 歌词流卡片 -->
+          <div class="glass-card p-8 rounded-xl">
             <div class="flex items-center justify-between mb-4">
               <h3 class="text-white/60 font-medium text-sm">歌词</h3>
               <button
@@ -466,5 +535,34 @@ onUnmounted(() => {
 .immersive-player {
   /* 禁止使用纯白背景 */
   background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.glass-widget {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 0.5px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.scrollbar-hide {
+  /* 隐藏滚动条但保持滚动功能 */
+  scrollbar-width: none;
+  /* Firefox */
+  -ms-overflow-style: none;
+  /* IE and Edge */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+  /* Chrome, Safari, Opera */
 }
 </style>

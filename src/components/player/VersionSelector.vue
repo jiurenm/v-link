@@ -74,16 +74,16 @@ const handleVersionClick = (version: VersionType) => {
 </script>
 
 <template>
-  <div v-if="shouldShow" class="version-selector flex items-center justify-center gap-2 mb-1">
+  <div v-if="shouldShow" class="version-selector flex items-center justify-center gap-2">
     <button
       v-for="version in availableVersions"
       :key="version"
       @click="handleVersionClick(version)"
       :class="[
-        'version-button relative px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-300',
+        'version-button relative px-4 py-1.5 rounded-full text-xs font-medium transition-all duration-300',
         'backdrop-blur-md border',
         currentVersion === version
-          ? 'bg-primary/40 text-white border-primary/60 shadow-lg shadow-primary/50 scale-105'
+          ? 'bg-primary/30 text-white border-primary/50 shadow-lg shadow-primary/40 scale-105'
           : 'bg-white/5 text-white/60 border-white/10 hover:bg-white/10 hover:text-white/80 hover:border-white/20',
       ]"
     >
@@ -92,17 +92,12 @@ const handleVersionClick = (version: VersionType) => {
       <!-- 金属感发光效果 -->
       <div
         v-if="currentVersion === version"
-        class="absolute inset-0 rounded-md bg-gradient-to-b from-primary/30 to-primary/10"
+        class="absolute inset-0 rounded-full bg-gradient-to-b from-primary/20 to-primary/5"
         style="
           box-shadow:
-            0 0 12px rgba(57, 197, 187, 0.5),
-            inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            0 0 16px rgba(57, 197, 187, 0.4),
+            inset 0 1px 0 rgba(255, 255, 255, 0.15);
         "
-      />
-      <div
-        v-if="currentVersion === version"
-        class="absolute inset-0 rounded-md border border-primary/60"
-        style="box-shadow: 0 0 8px rgba(57, 197, 187, 0.4)"
       />
     </button>
   </div>

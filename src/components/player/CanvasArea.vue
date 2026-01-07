@@ -237,9 +237,27 @@ onUnmounted(() => {
 <template>
   <div
     ref="canvasRef"
-    class="canvas-area relative w-full overflow-hidden bg-[#0a0a0a]"
-    style="aspect-ratio: 16/9; max-height: 45vh"
+    class="canvas-area relative w-full h-full overflow-hidden rounded-xl"
+    style="
+      box-shadow:
+        0 0 40px rgba(0, 0, 0, 0.8),
+        0 20px 60px rgba(0, 0, 0, 0.6),
+        0 0 0 1px rgba(255, 255, 255, 0.05);
+    "
   >
+    <!-- 模糊背景层 - 用于填充黑边 -->
+    <div
+      v-if="track?.cover"
+      class="absolute inset-0 -z-10"
+      :style="{
+        backgroundImage: `url(${track.cover})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        filter: 'blur(20px) brightness(0.5)',
+        transform: 'scale(1.1)',
+      }"
+    />
+
     <div
       class="absolute inset-0 transition-transform duration-100 ease-out"
       :style="{
@@ -253,7 +271,6 @@ onUnmounted(() => {
         :key="activeMediaUrl"
         :src="activeMediaUrl"
         loop
-        muted
         playsinline
         class="w-full h-full object-cover transition-opacity duration-700"
         :class="{ 'opacity-0': isSwitching || isChangingSource }"
@@ -293,7 +310,7 @@ onUnmounted(() => {
 
     <div class="absolute inset-0 pointer-events-none bg-radial-gradient" />
     <div
-      class="absolute bottom-0 left-0 right-0 h-40 pointer-events-none bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/40 to-transparent"
+      class="absolute bottom-0 left-0 right-0 h-40 pointer-events-none bg-gradient-to-t from-black/60 via-black/20 to-transparent"
     />
   </div>
 </template>

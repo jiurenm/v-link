@@ -7,9 +7,12 @@ interface Props {
   progress: number // 0-100
   currentTime: number
   duration: number
+  isPlaying?: boolean
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  isPlaying: false,
+})
 
 const emit = defineEmits<{
   seek: [time: number]
@@ -69,13 +72,14 @@ const playedGradient = computed(() => {
       <!-- 进度条背景（未播放部分 - 半透明，减薄到2-4px） -->
       <div class="absolute inset-0 h-full bg-white/10 rounded-full" />
 
-      <!-- 已播放部分（初音绿渐变） -->
+      <!-- 已播放部分（初音绿渐变 + 发光效果） -->
       <div
         class="absolute inset-y-0 left-0 h-full rounded-full transition-all duration-100"
         :style="{
           width: `${progress}%`,
           background: playedGradient,
-          boxShadow: '0 0 10px rgba(57, 197, 187, 0.5)',
+          boxShadow:
+            '0 0 12px rgba(57, 197, 187, 0.6), 0 0 24px rgba(57, 197, 187, 0.4), 0 0 36px rgba(57, 197, 187, 0.2)',
         }"
       />
 
@@ -89,8 +93,8 @@ const playedGradient = computed(() => {
         <img
           :src="thumbImage"
           alt="进度滑块"
-          class="w-6 h-6 drop-shadow-lg transition-transform"
-          :class="{ 'scale-110': isDragging }"
+          class="w-6 h-6 drop-shadow-lg transition-transform leek-thumb"
+          :class="{ 'scale-110': isDragging, 'leek-breathing': isPlaying && !isDragging }"
         />
       </div>
     </div>
@@ -106,5 +110,24 @@ const playedGradient = computed(() => {
 <style scoped>
 .leek-slider-container {
   padding: 0.5rem 0;
+}
+
+.leek-breathing {
+  animation: leekBreathe 2s ease-in-out infinite;
+}
+
+.leek-thumb.scale-110 {
+  animation: none !important;
+}
+
+@keyframes leekBreathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.05);
+  }
 }
 </style>
