@@ -120,10 +120,22 @@ export const usePlayerStore = defineStore('player', () => {
   function previousTrack() {
     if (queue.value.length === 0) return
 
+    // 单曲循环模式下，重置当前歌曲的播放时间
+    if (repeat.value === 'one') {
+      currentTime.value = 0
+      return
+    }
+
     if (currentIndex.value > 0) {
       currentIndex.value--
     } else {
-      currentIndex.value = queue.value.length - 1
+      // 列表循环模式下，从第一首跳到最后一首
+      if (repeat.value === 'all') {
+        currentIndex.value = queue.value.length - 1
+      } else {
+        // 非循环模式下，已经在第一首，不执行任何操作
+        return
+      }
     }
     currentTime.value = 0
     duration.value = queue.value[currentIndex.value]?.duration ?? 0

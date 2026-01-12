@@ -102,23 +102,29 @@ const playButtonSizeClass = {
     <button
       v-if="showRepeat"
       @click="emit('toggle-repeat')"
-      class="text-white/60 hover:text-white transition-colors"
-      :class="{ 'text-white': repeat !== 'off' }"
+      class="text-white/60 hover:text-white transition-colors relative"
+      :class="{ 'text-white': repeat !== 'off', 'text-primary': repeat !== 'off' }"
+      :title="repeat === 'off' ? '顺序播放' : repeat === 'all' ? '列表循环' : '单曲循环'"
     >
       <svg :class="iconSizeClass[size]" fill="currentColor" viewBox="0 0 24 24">
-        <path
-          v-if="repeat === 'off'"
-          d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v6z"
-        />
-        <path
-          v-else-if="repeat === 'all'"
-          d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v6z"
-        >
+        <!-- 顺序播放：列表加箭头图标 -->
+        <g v-if="repeat === 'off'">
+          <path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h12v2H3v-2z" />
+          <path d="M18 14l4 4-4 4v-3h-4v-2h4v-3z" />
+        </g>
+        <!-- 列表循环：循环图标 + 小圆点 -->
+        <g v-else-if="repeat === 'all'">
+          <path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v6z" />
           <circle cx="12" cy="12" r="2" fill="currentColor" />
-        </path>
-        <path v-else d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v6z">
-          <circle cx="12" cy="12" r="3" fill="currentColor" />
-        </path>
+        </g>
+        <!-- 单曲循环：循环图标 + 圆圈内数字 1 -->
+        <g v-else>
+          <path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v6z" />
+          <circle cx="12" cy="12" r="4" fill="currentColor" opacity="0.9" />
+          <text x="12" y="15.5" text-anchor="middle" font-size="7" font-weight="bold" fill="white">
+            1
+          </text>
+        </g>
       </svg>
     </button>
   </div>
