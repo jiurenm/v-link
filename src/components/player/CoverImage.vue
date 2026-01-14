@@ -18,7 +18,12 @@ const emit = defineEmits<{
       class="w-full h-full rounded-3xl overflow-hidden shadow-2xl cursor-pointer relative group"
       @click="emit('click')"
     >
-      <img :src="cover" :alt="title" class="w-full h-full object-cover" />
+      <img
+        :src="cover"
+        :alt="title"
+        referrerpolicy="no-referrer"
+        class="w-full h-full object-cover"
+      />
       <!-- 播放/暂停图标覆盖层 -->
       <div
         class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20"

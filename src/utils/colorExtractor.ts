@@ -16,6 +16,7 @@ export async function extractDominantColor(imageUrl: string): Promise<RGB> {
   return new Promise((resolve, reject) => {
     const img = new Image()
     img.crossOrigin = 'anonymous'
+    img.referrerPolicy = 'no-referrer'
 
     img.onload = () => {
       try {
@@ -131,8 +132,8 @@ export function generateGradient(rgb: RGB, intensity: number = 0.2): string {
   const flowL = Math.max(15, Math.min(25, l * intensity))
 
   // 创建毛玻璃渐变：顶部有轻微色彩，底部极深
-  return `linear-gradient(180deg, 
-    hsla(${h}, ${Math.min(60, s * 0.4)}%, ${flowL}%, 0.3) 0%, 
+  return `linear-gradient(180deg,
+    hsla(${h}, ${Math.min(60, s * 0.4)}%, ${flowL}%, 0.3) 0%,
     hsla(${(h + 20) % 360}, ${Math.min(50, s * 0.3)}%, ${flowL * 0.8}%, 0.2) 15%,
     hsla(${(h + 40) % 360}, ${Math.min(40, s * 0.2)}%, ${flowL * 0.6}%, 0.1) 30%,
     hsl(${h}, ${s * 0.1}%, ${darkL}%) 50%,

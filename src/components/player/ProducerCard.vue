@@ -57,6 +57,7 @@ const isVisible = ref(true)
               v-if="producer.avatar"
               :src="producer.avatar"
               :alt="producer.name"
+              referrerpolicy="no-referrer"
               class="w-full h-full object-cover"
             />
             <div v-else class="text-2xl text-primary">{{ producer.name[0] }}</div>
@@ -78,7 +79,12 @@ const isVisible = ref(true)
             class="flex items-center gap-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors cursor-pointer"
           >
             <div class="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 border border-white/10">
-              <img :src="song.cover" :alt="song.title" class="w-full h-full object-cover" />
+              <img
+                :src="song.cover"
+                :alt="song.title"
+                referrerpolicy="no-referrer"
+                class="w-full h-full object-cover"
+              />
             </div>
             <div class="flex-1 min-w-0">
               <div class="text-white text-sm font-medium truncate">{{ song.title }}</div>

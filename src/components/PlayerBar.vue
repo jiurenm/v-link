@@ -204,6 +204,7 @@ onUnmounted(() => {
             <img
               :src="currentTrack.cover"
               :alt="currentTrack.title"
+              referrerpolicy="no-referrer"
               class="w-full h-full object-cover transition-transform group-hover:scale-110"
             />
             <!-- 放大图标覆盖层 -->

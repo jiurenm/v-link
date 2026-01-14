@@ -256,7 +256,10 @@ onUnmounted(() => {
         filter: 'blur(20px) brightness(0.5)',
         transform: 'scale(1.1)',
       }"
-    />
+    >
+      <!-- 隐藏的预加载图片，确保使用正确的 referrer policy -->
+      <img :src="track.cover" referrerpolicy="no-referrer" class="hidden" alt="" />
+    </div>
 
     <div
       class="absolute inset-0 transition-transform duration-100 ease-out"
@@ -279,6 +282,7 @@ onUnmounted(() => {
       <img
         v-if="isNoMVMode && track?.cover"
         :src="track.cover"
+        referrerpolicy="no-referrer"
         class="w-full h-full object-cover transition-opacity duration-700"
         :class="{ 'opacity-0': isSwitching || isChangingSource }"
       />

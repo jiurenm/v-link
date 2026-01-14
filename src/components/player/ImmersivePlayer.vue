@@ -314,7 +314,10 @@ onUnmounted(() => {
         filter: 'blur(40px) brightness(0.4)',
         transform: 'scale(1.1)',
       }"
-    />
+    >
+      <!-- 隐藏的预加载图片，确保使用正确的 referrer policy -->
+      <img :src="blurredCoverUrl" referrerpolicy="no-referrer" class="hidden" alt="" />
+    </div>
     <div
       class="absolute inset-0 z-0"
       :style="{

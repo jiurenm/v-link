@@ -36,7 +36,7 @@ const initializePlayback = async () => {
   // 如果播放列表为空，从示例数据初始化播放列表
   if (playerStore.queue.length === 0) {
     // 使用 trackMapper 将 JSON 数据转换为 Track 格式
-    const tracks = mapSongsToTracks(exampleData.songs as Parameters<typeof mapSongsToTracks>[0])
+    const tracks = mapSongsToTracks(exampleData as Parameters<typeof mapSongsToTracks>[0])
 
     // 如果提供了 trackId，找到对应的歌曲索引
     let startIndex = 0

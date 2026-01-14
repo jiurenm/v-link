@@ -20,7 +20,12 @@ const emit = defineEmits<{
       class="relative overflow-hidden rounded-xl bg-gradient-to-br aspect-square mb-3 shadow-2xl group-hover:scale-105 transition-transform duration-300"
       :class="gradient"
     >
-      <img :src="cover" :alt="title" class="w-full h-full object-cover" />
+      <img
+        :src="cover"
+        :alt="title"
+        referrerpolicy="no-referrer"
+        class="w-full h-full object-cover"
+      />
       <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
       <div class="absolute bottom-4 left-4 right-4">
         <h3 class="text-white font-bold text-lg mb-1 line-clamp-1">{{ title }}</h3>

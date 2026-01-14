@@ -5,23 +5,35 @@ import type { Track, Version } from '@/stores/player'
 
 export interface SongFromJSON {
   id: string
+  wiki_id: string
   title: string
   artist: string
   is_pjsk: boolean
+  total_views: number
+  cover_url: string
   pjsk_meta?: {
-    group?: string
-    event_name?: string
-    difficulty_master?: number
+    main_group?: string
+    vocalist_type?: string
+    difficulty?: {
+      easy?: string
+      normal?: string
+      hard?: string
+      expert?: string
+      master?: string
+      append?: string
+    }
   } | null
   voca_db_id?: number
-  cover_url: string
   versions?: Array<{
     type: '2D' | '3D'
     label: string
     bvid?: string
     duration: number
-    vocalist?: string
-    videoUrl?: string
+    vocalists?: string[]
+    vocal_type?: string
+    views?: number
+    vocalist?: string // 保留向后兼容
+    videoUrl?: string // 保留向后兼容
   }>
 }
 
@@ -38,6 +50,8 @@ export function mapSongToTrack(song: SongFromJSON): Track {
     duration: song.versions?.[0]?.duration || 0, // 默认使用第一个版本的时长
     is_pjsk: song.is_pjsk,
     voca_db_id: song.voca_db_id,
+    wiki_id: song.wiki_id,
+    total_views: song.total_views,
     pjsk_meta: song.pjsk_meta || undefined,
   }
 
@@ -49,7 +63,10 @@ export function mapSongToTrack(song: SongFromJSON): Track {
         label: v.label,
         bvid: v.bvid,
         duration: v.duration,
-        vocalist: v.vocalist,
+        vocalists: v.vocalists,
+        vocal_type: v.vocal_type,
+        views: v.views,
+        vocalist: v.vocalist || v.vocalists?.[0], // 向后兼容：使用 vocalists 的第一个元素
         videoUrl: v.videoUrl,
       }),
     )

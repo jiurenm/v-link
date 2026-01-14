@@ -40,7 +40,12 @@ const coverSizeClass = {
       <span class="text-white/60 font-bold text-sm">{{ index }}</span>
     </div>
     <div :class="['flex-shrink-0 rounded-lg overflow-hidden', coverSizeClass[size]]">
-      <img :src="track.cover" :alt="track.title" class="w-full h-full object-cover" />
+      <img
+        :src="track.cover"
+        :alt="track.title"
+        referrerpolicy="no-referrer"
+        class="w-full h-full object-cover"
+      />
     </div>
     <div class="flex-1 min-w-0">
       <h4 class="text-white font-medium line-clamp-1 group-hover:text-primary transition-colors">

@@ -65,7 +65,12 @@ onUnmounted(() => {
             @click.stop="playTrack(index)"
           >
             <div class="flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden">
-              <img :src="track.cover" :alt="track.title" class="w-full h-full object-cover" />
+              <img
+                :src="track.cover"
+                :alt="track.title"
+                referrerpolicy="no-referrer"
+                class="w-full h-full object-cover"
+              />
             </div>
             <div class="flex-1 min-w-0">
               <h4 class="text-white font-medium line-clamp-1">{{ track.title }}</h4>

@@ -6,13 +6,27 @@ export interface Version {
   label: string
   bvid?: string
   duration: number
-  vocalist?: string
+  vocalists?: string[]
+  vocal_type?: string
+  views?: number
+  vocalist?: string // 向后兼容字段
   videoUrl?: string
 }
 
 export type VersionType = '2D' | '3D' | '无MV'
 
 export interface PJSKMeta {
+  main_group?: string
+  vocalist_type?: string
+  difficulty?: {
+    easy?: string
+    normal?: string
+    hard?: string
+    expert?: string
+    master?: string
+    append?: string
+  }
+  // 向后兼容字段
   group?: string
   event_name?: string
   difficulty_master?: number
@@ -37,6 +51,8 @@ export interface Track {
   currentVersion?: VersionType
   pjsk_meta?: PJSKMeta | null // JSON 中可能为 null
   voca_db_id?: number
+  wiki_id?: string // 从 JSON 数据中映射
+  total_views?: number // 从 JSON 数据中映射
   producer?: Producer
   illustrator?: Producer
   playCount?: number

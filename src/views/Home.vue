@@ -34,7 +34,7 @@ const charts = ref<Chart[]>([])
 
 // 从示例数据初始化排行榜和推荐
 onMounted(() => {
-  const tracks = mapSongsToTracks(exampleData.songs as Parameters<typeof mapSongsToTracks>[0])
+  const tracks = mapSongsToTracks(exampleData as Parameters<typeof mapSongsToTracks>[0])
 
   charts.value = [
     {
@@ -70,9 +70,7 @@ const goToPlayer = (id: string) => {
 
   // 如果在当前列表中找不到，从完整数据中查找
   if (!targetTrack) {
-    const allExampleTracks = mapSongsToTracks(
-      exampleData.songs as Parameters<typeof mapSongsToTracks>[0],
-    )
+    const allExampleTracks = mapSongsToTracks(exampleData as Parameters<typeof mapSongsToTracks>[0])
     targetTrack = allExampleTracks.find((track) => track.id === id)
     if (targetTrack) {
       // 使用完整的示例数据作为播放列表
