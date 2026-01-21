@@ -25,7 +25,7 @@ const emit = defineEmits<{
 }>()
 
 const coverSizeClass = {
-  small: 'w-12 h-12',
+  small: 'w-20 aspect-video', // 16:9 比例
   medium: 'w-28 h-16',
 }
 </script>
@@ -39,7 +39,7 @@ const coverSizeClass = {
     <div v-if="showIndex" class="flex-shrink-0 w-8 text-center">
       <span class="text-white/60 font-bold text-sm">{{ index }}</span>
     </div>
-    <div :class="['flex-shrink-0 rounded-lg overflow-hidden', coverSizeClass[size]]">
+    <div :class="['flex-shrink-0 rounded overflow-hidden', coverSizeClass[size]]">
       <img
         :src="track.cover"
         :alt="track.title"

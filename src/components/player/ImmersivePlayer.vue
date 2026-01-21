@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { usePlayerStore, type Track, type VersionType } from '@/stores/player'
 import { extractDominantColor, generateGradient } from '@/utils/colorExtractor'
 import CanvasArea from './CanvasArea.vue'
@@ -37,9 +37,6 @@ const touchCurrentY = ref(0)
 const isDragging = ref(false)
 const dragOffset = ref(0)
 const playerRef = ref<HTMLElement | null>(null)
-
-// 进入动画
-const isEntering = ref(true)
 
 // 39 模式检测
 const is39Mode = ref(false)
@@ -264,23 +261,7 @@ const handleTouchEnd = () => {
 
 onMounted(() => {
   extractColor()
-
-  // 进入动画
-  isEntering.value = true
-  nextTick(() => {
-    if (playerRef.value) {
-      playerRef.value.style.transition =
-        'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease-out'
-      playerRef.value.style.transform = 'translateY(0)'
-      playerRef.value.style.opacity = '1'
-    }
-    setTimeout(() => {
-      isEntering.value = false
-      if (playerRef.value) {
-        playerRef.value.style.transition = ''
-      }
-    }, 400)
-  })
+  // 移除进入动画，直接显示
 })
 
 onUnmounted(() => {
@@ -296,8 +277,8 @@ onUnmounted(() => {
     class="immersive-player fixed inset-0 z-40 overflow-hidden"
     :class="{ 'touch-none': isDragging }"
     :style="{
-      transform: isDragging ? `translateY(${dragOffset}px)` : isEntering ? 'translateY(100%)' : '',
-      opacity: isDragging ? Math.max(0.5, 1 - dragOffset / 400) : isEntering ? 0 : 1,
+      transform: isDragging ? `translateY(${dragOffset}px)` : '',
+      opacity: isDragging ? Math.max(0.5, 1 - dragOffset / 400) : 1,
     }"
     @touchstart="handleTouchStart"
     @touchmove="handleTouchMove"
