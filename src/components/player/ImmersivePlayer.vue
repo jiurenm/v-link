@@ -45,6 +45,22 @@ let neonFlashTimeout: number | null = null
 // 计算当前版本
 const currentVersion = computed(() => playerStore.currentVersion)
 
+// 根据组合名称返回对应的颜色
+const groupColor = computed(() => {
+  const group = props.track?.pjsk_meta?.main_group
+  if (!group) return '#39c5bb' // 默认 primary 色
+
+  const colorMap: Record<string, string> = {
+    'Leo/need': 'var(--color-accent-blue)',
+    'MORE MORE JUMP！': 'var(--color-accent-green)',
+    'Vivid BAD SQUAD': 'var(--color-accent-pink)',
+    'ワンダーランズ×ショウタイム': 'var(--color-accent-orange)',
+    '25時、ナイトコードで。': 'var(--color-accent-purple)',
+  }
+
+  return colorMap[group] || '#39c5bb'
+})
+
 // 检测 39 模式
 const check39Mode = (time: number) => {
   const minutes = Math.floor(time / 60)
@@ -316,13 +332,15 @@ onUnmounted(() => {
       >
         <div class="flex items-center w-full max-w-7xl gap-4">
           <!-- 左侧厨力插件 -->
-          <div class="hidden lg:flex flex-col items-center justify-center flex-shrink-0 w-32">
+          <div class="hidden lg:flex flex-col items-center justify-center flex-shrink-0 w-64">
             <div
-              v-if="track?.pjsk_meta?.group"
-              class="glass-widget px-4 py-3 rounded-lg text-center"
+              v-if="track?.pjsk_meta?.main_group"
+              class="glass-panel p-4 rounded-2xl flex flex-col items-center"
             >
-              <div class="text-xs text-white/40 mb-1" style="letter-spacing: 0.1em">PJSK</div>
-              <div class="text-sm font-semibold text-white">{{ track.pjsk_meta.group }}</div>
+              <span class="text-[10px] uppercase tracking-widest text-gray-400 mb-1">Group</span>
+              <div class="font-bold text-lg" :style="{ color: groupColor }">
+                {{ track.pjsk_meta.main_group }}
+              </div>
             </div>
           </div>
 
@@ -341,7 +359,7 @@ onUnmounted(() => {
           </div>
 
           <!-- 右侧厨力插件 -->
-          <div class="hidden lg:flex flex-col items-center justify-center flex-shrink-0 w-32 gap-3">
+          <div class="hidden lg:flex flex-col items-center justify-center flex-shrink-0 w-64 gap-3">
             <a
               v-if="track?.voca_db_id"
               :href="`https://vocadb.net/S/${track.voca_db_id}`"
@@ -353,13 +371,14 @@ onUnmounted(() => {
               <div class="text-sm font-semibold text-primary">查看详情</div>
             </a>
             <div
-              v-if="track?.pjsk_meta?.difficulty_master"
-              class="glass-widget px-4 py-2 rounded-lg text-center"
+              v-if="track?.pjsk_meta?.difficulty?.master"
+              class="glass-panel p-4 rounded-2xl text-center"
             >
-              <div class="text-xs text-white/40 mb-1">Master</div>
-              <div class="text-sm font-semibold text-white">
-                {{ track.pjsk_meta.difficulty_master }}
+              <div class="text-[10px] text-gray-400 uppercase mb-1">Difficulty</div>
+              <div class="text-3xl font-black text-white/90">
+                {{ track.pjsk_meta.difficulty.master }}
               </div>
+              <div class="text-[10px] text-white/40 tracking-widest">MASTER</div>
             </div>
           </div>
         </div>
@@ -534,6 +553,13 @@ onUnmounted(() => {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 0.5px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 

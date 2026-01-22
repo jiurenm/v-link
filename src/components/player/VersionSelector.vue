@@ -74,17 +74,16 @@ const handleVersionClick = (version: VersionType) => {
 </script>
 
 <template>
-  <div v-if="shouldShow" class="version-selector flex items-center justify-center gap-2">
+  <div v-if="shouldShow" class="version-selector flex items-center justify-center p-1 rounded-full">
     <button
       v-for="version in availableVersions"
       :key="version"
       @click="handleVersionClick(version)"
       :class="[
-        'version-button relative px-4 py-1.5 rounded-full text-xs font-medium transition-all duration-300',
-        'backdrop-blur-md border',
+        'relative px-6 py-1.5 rounded-full text-xs font-medium transition-all duration-300',
         currentVersion === version
-          ? 'bg-primary/30 text-white border-primary/50 shadow-lg shadow-primary/40 scale-105'
-          : 'bg-white/5 text-white/60 border-white/10 hover:bg-white/10 hover:text-white/80 hover:border-white/20',
+          ? 'bg-[#39c5bb] text-black shadow-lg'
+          : 'text-white/60 hover:text-white',
       ]"
     >
       <span class="relative z-10">{{ version }}</span>
@@ -104,7 +103,11 @@ const handleVersionClick = (version: VersionType) => {
 </template>
 
 <style scoped>
-.version-button {
-  min-width: 60px;
+.version-selector {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 0.5px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
 }
 </style>
