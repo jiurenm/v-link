@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePlayerStore, type Track } from '@/stores/player'
 import NavBar from '@/components/common/NavBar.vue'
-import FeaturedSection from '@/components/home/FeaturedSection.vue'
-import ChartSection from '@/components/home/ChartSection.vue'
+import GlobalTopTrends from '@/components/home/GlobalTopTrends.vue'
+import GroupImmersiveZone from '@/components/home/GroupImmersiveZone.vue'
 import exampleData from '@/mock/example.json'
 import { mapSongsToTracks } from '@/utils/trackMapper'
 
@@ -15,98 +15,106 @@ defineOptions({
 const router = useRouter()
 const playerStore = usePlayerStore()
 
-interface FeaturedItem {
-  id: string
-  title: string
-  artist: string
-  cover: string
+// 团体颜色映射
+const groupColors: Record<string, string> = {
+  '25時、ナイトコードで。': '#884499',
+  'Leo/need': '#4455dd',
+  'MORE MORE JUMP！': '#88dd44',
+  'Vivid BAD SQUAD': '#ee1166',
+  'ワンダーランズ×ショウタイム': '#ff9900',
+  'Virtual Singer': '#39C5BB',
 }
 
-interface Chart {
-  id: string
-  name: string
-  tracks: Track[]
+// 团体背景光位置映射
+const groupGlowPositions: Record<string, 'left' | 'right'> = {
+  '25時、ナイトコードで。': 'right',
+  'Leo/need': 'right',
+  'MORE MORE JUMP！': 'left',
+  'Vivid BAD SQUAD': 'right',
+  'ワンダーランズ×ショウタイム': 'left',
+  'Virtual Singer': 'left',
 }
 
-const featuredItems = ref<FeaturedItem[]>([])
+const allTracks = ref<Track[]>([])
+const topTrends = ref<Track[]>([])
+const groupTracks = ref<Record<string, Track[]>>({})
 
-const charts = ref<Chart[]>([])
-
-// 从示例数据初始化排行榜和推荐
+// 从示例数据初始化
 onMounted(() => {
   const tracks = mapSongsToTracks(exampleData as Parameters<typeof mapSongsToTracks>[0])
+  allTracks.value = tracks
 
-  charts.value = [
-    {
-      id: 'daily',
-      name: '日榜',
-      tracks: tracks.slice(0, 5), // 取前5首
-    },
-    {
-      id: 'weekly',
-      name: '周榜',
-      tracks: tracks.slice(0, 3), // 取前3首
-    },
-  ]
+  // 按总播放量排序，取前9首作为热门榜单
+  topTrends.value = [...tracks]
+    .sort((a, b) => (b.total_views || 0) - (a.total_views || 0))
+    .slice(0, 9)
 
-  // 使用示例数据的前几首作为推荐，使用真实的 track id
-  featuredItems.value = tracks.slice(0, 5).map((track) => ({
-    id: track.id, // 使用真实的歌曲 ID
-    title: track.title,
-    artist: track.artist,
-    cover: track.cover,
-  }))
+  // 按团体分组（排除 Other）
+  const grouped: Record<string, Track[]> = {}
+  tracks.forEach((track) => {
+    const group = track.pjsk_meta?.main_group
+    if (group && group !== 'Other') {
+      if (!grouped[group]) {
+        grouped[group] = []
+      }
+      grouped[group].push(track)
+    }
+  })
+
+  // 每个团体取前6首
+  Object.keys(grouped).forEach((group) => {
+    const tracks = grouped[group]
+    if (tracks && Array.isArray(tracks)) {
+      groupTracks.value[group] = tracks.slice(0, 6)
+    }
+  })
 })
 
 const goToPlayer = (id: string) => {
-  // 从所有榜单和推荐中收集所有歌曲作为播放列表
-  const allTracks: Track[] = []
-  charts.value.forEach((chart) => {
-    allTracks.push(...chart.tracks)
-  })
+  const targetTrack = allTracks.value.find((track) => track.id === id)
+  if (!targetTrack) return
 
-  // 如果点击的是推荐项，需要从完整的示例数据中查找
-  let targetTrack: Track | undefined = allTracks.find((track) => track.id === id)
-
-  // 如果在当前列表中找不到，从完整数据中查找
-  if (!targetTrack) {
-    const allExampleTracks = mapSongsToTracks(exampleData as Parameters<typeof mapSongsToTracks>[0])
-    targetTrack = allExampleTracks.find((track) => track.id === id)
-    if (targetTrack) {
-      // 使用完整的示例数据作为播放列表
-      const trackIndex = allExampleTracks.findIndex((t) => t.id === id)
-      if (trackIndex >= 0) {
-        playerStore.setQueue(allExampleTracks, trackIndex)
-        playerStore.isPlaying = true
-        playerStore.playTrack(trackIndex)
-        router.push({ name: 'player', params: { id } })
-        return
-      }
-    }
-  }
-
-  // 找到当前点击的歌曲索引
-  const trackIndex = allTracks.findIndex((track) => track.id === id)
-
-  // 设置播放列表并播放指定歌曲
+  const trackIndex = allTracks.value.findIndex((t) => t.id === id)
   if (trackIndex >= 0) {
-    playerStore.setQueue(allTracks, trackIndex)
-    // 强制设置为播放状态
+    playerStore.setQueue(allTracks.value, trackIndex)
     playerStore.isPlaying = true
-    // 使用 playTrack 确保切换到指定歌曲
     playerStore.playTrack(trackIndex)
+    router.push({ name: 'player', params: { id } })
   }
-
-  router.push({ name: 'player', params: { id } })
 }
+
+// 获取排序后的团体列表
+const sortedGroups = computed(() => {
+  const priority = [
+    'Virtual Singer',
+    'Leo/need',
+    'MORE MORE JUMP！',
+    'Vivid BAD SQUAD',
+    'ワンダーランズ×ショウタイム',
+    '25時、ナイトコードで。',
+  ]
+  // 只返回在 priority 中定义的团体，并按顺序排列
+  return priority.filter((group) => groupTracks.value[group] && groupTracks.value[group].length > 0)
+})
 </script>
 
 <template>
-  <div class="min-h-screen bg-gradient-to-b from-primary-900 via-primary-800 to-primary-700">
+  <div class="min-h-screen bg-[#0a0a0f] text-white pb-24">
     <NavBar />
-    <div class="container mx-auto px-4 py-8">
-      <FeaturedSection :items="featuredItems" @item-click="goToPlayer" />
-      <ChartSection :charts="charts" @track-click="goToPlayer" @track-play="goToPlayer" />
-    </div>
+
+    <!-- 全站热门榜单 -->
+    <GlobalTopTrends :tracks="topTrends" @track-click="goToPlayer" @track-play="goToPlayer" />
+
+    <!-- 团体沉浸式分区 -->
+    <GroupImmersiveZone
+      v-for="groupName in sortedGroups"
+      :key="groupName"
+      :group-name="groupName"
+      :tracks="groupTracks[groupName] || []"
+      :glow-color="groupColors[groupName] || '#888888'"
+      :glow-position="groupGlowPositions[groupName] || 'left'"
+      @track-click="goToPlayer"
+      @track-play="goToPlayer"
+    />
   </div>
 </template>
