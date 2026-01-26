@@ -17,4 +17,13 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     },
   },
+  server: {
+    proxy: {
+      '/pjsekai': {
+        target: 'https://pjsekai.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/pjsekai/, ''),
+      },
+    },
+  },
 })

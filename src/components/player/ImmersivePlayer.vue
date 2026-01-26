@@ -8,6 +8,7 @@ import LeekSlider from './LeekSlider.vue'
 import StreamingLyrics from './StreamingLyrics.vue'
 import LegendProgress from './LegendProgress.vue'
 import ProducerCard from './ProducerCard.vue'
+import SongDescription from './SongDescription.vue'
 import PlaybackControls from '@/components/common/PlaybackControls.vue'
 
 interface Props {
@@ -458,6 +459,8 @@ onUnmounted(() => {
               </button>
             </div>
           </div>
+
+          <SongDescription :track="track" />
 
           <!-- 传说入进度条 -->
           <div v-if="track?.playCount" class="glass-card p-4 rounded-xl">

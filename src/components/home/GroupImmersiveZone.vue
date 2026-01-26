@@ -71,9 +71,9 @@ const handleCardPlay = (e: Event, track: Track) => {
     </div>
 
     <!-- 横向卡片流 - 独立容器以支持全宽滚动 -->
-    <div class="px-6 max-w-7xl mx-auto">
+    <div class="px-6 max-w-7xl mx-auto overflow-hidden">
       <div
-        class="flex gap-8 overflow-x-auto hide-scrollbar py-4 scroll-smooth snap-x snap-mandatory"
+        class="flex gap-8 overflow-x-auto auto-hide-scrollbar py-4 scroll-smooth snap-x snap-mandatory touch-pan-x"
       >
         <div
           v-for="track in tracks"
@@ -129,13 +129,36 @@ const handleCardPlay = (e: Event, track: Track) => {
 </template>
 
 <style scoped>
-.hide-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+.auto-hide-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  transition: scrollbar-color 0.3s;
 }
 
-.hide-scrollbar::-webkit-scrollbar {
-  display: none;
+.auto-hide-scrollbar:hover {
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+.auto-hide-scrollbar::-webkit-scrollbar {
+  height: 8px;
+}
+
+.auto-hide-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.auto-hide-scrollbar::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 4px;
+  transition: background 0.3s;
+}
+
+.auto-hide-scrollbar:hover::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.auto-hide-scrollbar:hover::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
 }
 
 .group-card {
