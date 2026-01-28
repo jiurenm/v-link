@@ -57,6 +57,7 @@ export interface Track {
   illustrator?: Producer
   playCount?: number
   lyrics?: Array<{ time: number; text: string; translation?: string }>
+  updated_at?: number
 }
 
 export const usePlayerStore = defineStore('player', () => {

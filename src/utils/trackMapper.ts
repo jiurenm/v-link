@@ -35,6 +35,7 @@ export interface SongFromJSON {
     vocalist?: string // 保留向后兼容
     videoUrl?: string // 保留向后兼容
   }>
+  updated_at?: number
 }
 
 /**
@@ -53,6 +54,7 @@ export function mapSongToTrack(song: SongFromJSON): Track {
     wiki_id: song.wiki_id,
     total_views: song.total_views,
     pjsk_meta: song.pjsk_meta || undefined,
+    updated_at: song.updated_at,
   }
 
   // 如果有版本信息，映射版本数据

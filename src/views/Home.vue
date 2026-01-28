@@ -5,6 +5,7 @@ import { usePlayerStore, type Track } from '@/stores/player'
 import NavBar from '@/components/common/NavBar.vue'
 import GlobalTopTrends from '@/components/home/GlobalTopTrends.vue'
 import GroupImmersiveZone from '@/components/home/GroupImmersiveZone.vue'
+import RecentlyUpdated from '@/components/home/RecentlyUpdated.vue'
 import exampleData from '@/mock/example.json'
 import { mapSongsToTracks } from '@/utils/trackMapper'
 
@@ -37,6 +38,7 @@ const groupGlowPositions: Record<string, 'left' | 'right'> = {
 
 const allTracks = ref<Track[]>([])
 const topTrends = ref<Track[]>([])
+const recentlyUpdated = ref<Track[]>([])
 const groupTracks = ref<Record<string, Track[]>>({})
 
 // 从示例数据初始化
@@ -48,6 +50,11 @@ onMounted(() => {
   topTrends.value = [...tracks]
     .sort((a, b) => (b.total_views || 0) - (a.total_views || 0))
     .slice(0, 9)
+
+  // 按 updated_at 排序，取前 12 首作为最近更新
+  recentlyUpdated.value = [...tracks]
+    .sort((a, b) => (b.updated_at || 0) - (a.updated_at || 0))
+    .slice(0, 12)
 
   // 按团体分组（排除 Other）
   const grouped: Record<string, Track[]> = {}
@@ -104,6 +111,9 @@ const sortedGroups = computed(() => {
 
     <!-- 全站热门榜单 -->
     <GlobalTopTrends :tracks="topTrends" @track-click="goToPlayer" @track-play="goToPlayer" />
+
+    <!-- 最近更新 -->
+    <RecentlyUpdated :tracks="recentlyUpdated" @track-click="goToPlayer" @track-play="goToPlayer" />
 
     <!-- 团体沉浸式分区 -->
     <GroupImmersiveZone
