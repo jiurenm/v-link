@@ -3,6 +3,8 @@
  * 用于获取视频信息和DASH流URL
  */
 
+const TARGET_DOMAIN = 'upos-sz-mirrorcos.bilivideo.com'
+
 export interface VideoInfo {
   bvid: string
   aid: number
@@ -224,8 +226,22 @@ export async function getPlayUrls(bvid: string): Promise<{
   if (!dashInfo) return null
 
   // 3. 选择最佳的视频和音频流
-  const videoStream = selectBestVideoStream(dashInfo.video)
-  const audioStream = selectBestAudioStream(dashInfo.audio)
+  // 过滤出包含目标域名的流
+  const filteredVideo = dashInfo.video.filter(
+    (s) =>
+      s.baseUrl.includes(TARGET_DOMAIN) || s.backupUrl?.some((url) => url.includes(TARGET_DOMAIN)),
+  )
+  const filteredAudio = dashInfo.audio.filter(
+    (s) =>
+      s.baseUrl.includes(TARGET_DOMAIN) || s.backupUrl?.some((url) => url.includes(TARGET_DOMAIN)),
+  )
+
+  const videoStream = selectBestVideoStream(
+    filteredVideo.length > 0 ? filteredVideo : dashInfo.video,
+  )
+  const audioStream = selectBestAudioStream(
+    filteredAudio.length > 0 ? filteredAudio : dashInfo.audio,
+  )
 
   if (!videoStream || !audioStream) {
     console.error('无法获取视频或音频流')
@@ -255,7 +271,15 @@ export async function getAudioUrl(bvid: string): Promise<{
   if (!dashInfo) return null
 
   // 3. 选择最佳的音频流
-  const audioStream = selectBestAudioStream(dashInfo.audio)
+  // 过滤出包含目标域名的流
+  const filteredAudio = dashInfo.audio.filter(
+    (s) =>
+      s.baseUrl.includes(TARGET_DOMAIN) || s.backupUrl?.some((url) => url.includes(TARGET_DOMAIN)),
+  )
+
+  const audioStream = selectBestAudioStream(
+    filteredAudio.length > 0 ? filteredAudio : dashInfo.audio,
+  )
 
   if (!audioStream) {
     console.error('无法获取音频流')
@@ -263,7 +287,7 @@ export async function getAudioUrl(bvid: string): Promise<{
   }
 
   return {
-    audioUrl: audioStream.baseUrl,
+    audioUrl: selectBestUrl(audioStream),
     duration: dashInfo.duration,
   }
 }

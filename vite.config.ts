@@ -7,14 +7,10 @@ import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [
-    vue(),
-    vueDevTools(),
-    tailwindcss(),
-  ],
+  plugins: [vue(), vueDevTools(), tailwindcss()],
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
   server: {
@@ -40,7 +36,7 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
         headers: {
-          Referer: 'https://www.bilibili.com/',
+          Referer: 'https://www.bilibili.com',
           Origin: 'https://www.bilibili.com',
         },
         // 使用 router 动态确定目标域名
