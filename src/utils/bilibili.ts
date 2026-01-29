@@ -3,7 +3,7 @@
  * 用于获取视频信息和DASH流URL
  */
 
-const TARGET_DOMAIN = 'upos-sz-mirrorcos.bilivideo.com'
+const TARGET_DOMAINS = ['upos-sz-mirrorcos.bilivideo.com', 'upos-sz-estgoss.bilivideo.com']
 
 export interface VideoInfo {
   bvid: string
@@ -180,7 +180,8 @@ export function selectBestAudioStream(streams: DashStream[]): DashStream | null 
 function convertToProxyUrl(originalUrl: string): string {
   try {
     const url = new URL(originalUrl)
-    // 使用 upos-sz-mirrorcos.bilivideo.com 作为固定代理目标
+    // 使用 TARGET_DOMAINS[0] 或当前匹配的域名作为固定代理 target
+    // 实际代理逻辑由 vite.config.ts 处理（可能需要 router 支持）
     // 因为Vite代理只能有一个固定target
     // vite.config.ts 中的 rewrite 规则是 /bili-video/HOST/path -> /path
     // 所以我们需要在路径中包含 host
@@ -197,11 +198,11 @@ function selectBestUrl(stream: DashStream): string {
   // 收集所有可用URL
   const allUrls = [stream.baseUrl, ...(stream.backupUrl || [])]
 
-  // 优先查找 mirrorcos 的 URL
-  const mirrorCosUrl = allUrls.find((url) => url.includes('upos-sz-mirrorcos.bilivideo.com'))
+  // 优先查找 target domains 的 URL
+  const targetUrl = allUrls.find((url) => TARGET_DOMAINS.some((domain) => url.includes(domain)))
 
-  if (mirrorCosUrl) {
-    return convertToProxyUrl(mirrorCosUrl)
+  if (targetUrl) {
+    return convertToProxyUrl(targetUrl)
   }
 
   // 回退到baseUrl
@@ -229,12 +230,16 @@ export async function getPlayUrls(bvid: string): Promise<{
   // 过滤出包含目标域名的流
   const filteredVideo = dashInfo.video.filter(
     (s) =>
-      s.baseUrl.includes(TARGET_DOMAIN) || s.backupUrl?.some((url) => url.includes(TARGET_DOMAIN)),
+      TARGET_DOMAINS.some((domain) => s.baseUrl.includes(domain)) ||
+      s.backupUrl?.some((url) => TARGET_DOMAINS.some((domain) => url.includes(domain))),
   )
   const filteredAudio = dashInfo.audio.filter(
     (s) =>
-      s.baseUrl.includes(TARGET_DOMAIN) || s.backupUrl?.some((url) => url.includes(TARGET_DOMAIN)),
+      TARGET_DOMAINS.some((domain) => s.baseUrl.includes(domain)) ||
+      s.backupUrl?.some((url) => TARGET_DOMAINS.some((domain) => url.includes(domain))),
   )
+
+  console.log('filteredVideo', filteredAudio)
 
   const videoStream = selectBestVideoStream(
     filteredVideo.length > 0 ? filteredVideo : dashInfo.video,
@@ -274,7 +279,8 @@ export async function getAudioUrl(bvid: string): Promise<{
   // 过滤出包含目标域名的流
   const filteredAudio = dashInfo.audio.filter(
     (s) =>
-      s.baseUrl.includes(TARGET_DOMAIN) || s.backupUrl?.some((url) => url.includes(TARGET_DOMAIN)),
+      TARGET_DOMAINS.some((domain) => s.baseUrl.includes(domain)) ||
+      s.backupUrl?.some((url) => TARGET_DOMAINS.some((domain) => url.includes(domain))),
   )
 
   const audioStream = selectBestAudioStream(
