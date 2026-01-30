@@ -6,8 +6,7 @@ import NavBar from '@/components/common/NavBar.vue'
 import GlobalTopTrends from '@/components/home/GlobalTopTrends.vue'
 import GroupImmersiveZone from '@/components/home/GroupImmersiveZone.vue'
 import RecentlyUpdated from '@/components/home/RecentlyUpdated.vue'
-import exampleData from '@/mock/example.json'
-import { mapSongsToTracks } from '@/utils/trackMapper'
+import { fetchTracks } from '@/services/dataService'
 
 defineOptions({
   name: 'HomePage',
@@ -41,9 +40,9 @@ const topTrends = ref<Track[]>([])
 const recentlyUpdated = ref<Track[]>([])
 const groupTracks = ref<Record<string, Track[]>>({})
 
-// 从示例数据初始化
-onMounted(() => {
-  const tracks = mapSongsToTracks(exampleData as Parameters<typeof mapSongsToTracks>[0])
+// 从正式数据初始化
+onMounted(async () => {
+  const tracks = await fetchTracks()
   allTracks.value = tracks
 
   // 按总播放量排序，取前9首作为热门榜单
