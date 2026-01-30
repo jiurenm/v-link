@@ -79,6 +79,10 @@ const activeMediaUrl = computed(() => {
 // 获取当前处于活跃状态的 DOM 元素
 const activeMediaRef = computed(() => (isNoMVMode.value ? audioRef.value : videoRef.value))
 
+const emit = defineEmits<{
+  ended: []
+}>()
+
 // --- 核心方法：时间同步调度器 ---
 
 const startUpdateLoop = () => {
@@ -110,6 +114,10 @@ const stopUpdateLoop = () => {
 }
 
 // --- 媒体控制逻辑 ---
+
+const handleEnded = () => {
+  emit('ended')
+}
 
 const initMedia = async () => {
   // 如果使用DASH播放器，不需要初始化传统媒体元素
@@ -344,6 +352,7 @@ onUnmounted(() => {
         @durationchange="handleDashDurationChange"
         @loading="handleDashLoading"
         @error="handleDashError"
+        @ended="handleEnded"
       />
 
       <!-- DASH 音频模式 (无MV模式，使用2D版本的bvid) -->
@@ -360,6 +369,7 @@ onUnmounted(() => {
         @durationchange="handleDashDurationChange"
         @loading="handleDashLoading"
         @error="handleDashError"
+        @ended="handleEnded"
       />
 
       <!-- 传统视频播放模式 (videoUrl模式) -->
@@ -368,10 +378,10 @@ onUnmounted(() => {
         ref="videoRef"
         :key="activeMediaUrl"
         :src="activeMediaUrl"
-        loop
         playsinline
         class="w-full h-full object-cover transition-opacity duration-700"
         :class="{ 'opacity-0': isSwitching || isChangingSource }"
+        @ended="handleEnded"
       />
 
       <!-- 无MV模式显示封面图 -->
@@ -389,8 +399,8 @@ onUnmounted(() => {
       v-if="isNoMVMode && activeMediaUrl && !shouldUseDashPlayer"
       ref="audioRef"
       :src="activeMediaUrl"
-      loop
       class="hidden"
+      @ended="handleEnded"
     />
 
     <Transition name="fade">

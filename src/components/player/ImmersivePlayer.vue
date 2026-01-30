@@ -19,6 +19,7 @@ const props = defineProps<Props>()
 
 const emit = defineEmits<{
   close: []
+  ended: []
 }>()
 
 const playerStore = usePlayerStore()
@@ -356,6 +357,7 @@ onUnmounted(() => {
               :current-version="currentVersion"
               :is-switching="isSwitchingVersion"
               :current-time="playerStore.currentTime"
+              @ended="emit('ended')"
             />
           </div>
 
