@@ -20,6 +20,7 @@ const emit = defineEmits<{
 
 const sliderRef = ref<HTMLDivElement>()
 const isDragging = ref(false)
+const localProgress = ref(0)
 
 const handleMouseDown = (e: MouseEvent) => {
   isDragging.value = true
@@ -40,21 +41,30 @@ const handleSeek = (e: MouseEvent) => {
   if (!sliderRef.value) return
   const rect = sliderRef.value.getBoundingClientRect()
   const percent = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width))
+
+  // 更新本地进度，防止播放进度回跳
+  localProgress.value = percent * 100
+
   const newTime = percent * props.duration
   emit('seek', newTime)
 }
 
+// 计算当前显示进度（拖拽时使用本地进度）
+const currentProgress = computed(() => {
+  return isDragging.value ? localProgress.value : props.progress
+})
+
 // 计算滑块位置
 const thumbPosition = computed(() => {
-  return `${props.progress}%`
+  return `${currentProgress.value}%`
 })
 
 // 计算已播放部分的渐变（初音绿主题色）
 const playedGradient = computed(() => {
   // 使用初音绿主题色，创建渐变效果
-  return `linear-gradient(to right, 
-    #39c5bb 0%, 
-    #66cfc9 50%, 
+  return `linear-gradient(to right,
+    #39c5bb 0%,
+    #66cfc9 50%,
     #39c5bb 100%)`
 })
 </script>
@@ -74,9 +84,10 @@ const playedGradient = computed(() => {
 
       <!-- 已播放部分（初音绿渐变 + 发光效果） -->
       <div
-        class="absolute inset-y-0 left-0 h-full rounded-full transition-all duration-100"
+        class="absolute inset-y-0 left-0 h-full rounded-full"
+        :class="isDragging ? 'transition-none' : 'transition-all duration-200 ease-linear'"
         :style="{
-          width: `${progress}%`,
+          width: `${currentProgress}%`,
           background: playedGradient,
           boxShadow:
             '0 0 12px rgba(57, 197, 187, 0.6), 0 0 24px rgba(57, 197, 187, 0.4), 0 0 36px rgba(57, 197, 187, 0.2)',
@@ -85,7 +96,8 @@ const playedGradient = computed(() => {
 
       <!-- 葱形滑块 -->
       <div
-        class="absolute top-1/2 -translate-y-1/2 transition-all duration-100 cursor-grab active:cursor-grabbing"
+        class="absolute top-1/2 -translate-y-1/2 cursor-grab active:cursor-grabbing"
+        :class="isDragging ? 'transition-none' : 'transition-all duration-200 ease-linear'"
         :style="{
           left: `calc(${thumbPosition} - 12px)`,
         }"

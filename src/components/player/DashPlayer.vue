@@ -39,10 +39,9 @@ const currentAudioUrl = ref('')
 // 内部状态
 let isSeeking = false
 let isChangingSource = false
-let lastStoreSyncTime = 0
 
 // 同步参数
-const SYNC_INTERVAL = 300 // 同步频率（ms）
+const SYNC_INTERVAL = 200 // 同步频率（ms）
 const MAX_DRIFT = 0.6 // 超过这个直接 seek（秒）
 const RATE_FACTOR = 0.15 // 调速强度（越小越平滑）
 
@@ -195,11 +194,7 @@ const startSyncLoop = () => {
     }
 
     // 发射时间更新事件（以音频时间为准）
-    const now = performance.now()
-    if (now - lastStoreSyncTime > 250) {
-      emit('timeupdate', audio.currentTime)
-      lastStoreSyncTime = now
-    }
+    emit('timeupdate', audio.currentTime)
   }, SYNC_INTERVAL)
 }
 

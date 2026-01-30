@@ -92,7 +92,7 @@ const startUpdateLoop = () => {
 
       // 2. 节流更新 Store (每秒同步一次全局状态，减少渲染压力)
       const now = performance.now()
-      if (now - lastStoreSyncTime > 1000) {
+      if (now - lastStoreSyncTime > 200) {
         playerStore.setCurrentTime(el.currentTime)
         lastStoreSyncTime = now
       }
@@ -155,11 +155,8 @@ const initMedia = async () => {
 // --- DASH 播放器事件处理 ---
 const handleDashTimeUpdate = (time: number) => {
   localTime.value = time
-  const now = performance.now()
-  if (now - lastStoreSyncTime > 1000) {
-    playerStore.setCurrentTime(time)
-    lastStoreSyncTime = now
-  }
+  // DashPlayer 已经控制了更新频率(200ms)，这里直接更新 Store 即可，避免双重节流导致的时间混叠
+  playerStore.setCurrentTime(time)
 }
 
 const handleDashDurationChange = (duration: number) => {

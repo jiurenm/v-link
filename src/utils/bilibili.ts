@@ -239,8 +239,6 @@ export async function getPlayUrls(bvid: string): Promise<{
       s.backupUrl?.some((url) => TARGET_DOMAINS.some((domain) => url.includes(domain))),
   )
 
-  console.log('filteredVideo', filteredAudio)
-
   const videoStream = selectBestVideoStream(
     filteredVideo.length > 0 ? filteredVideo : dashInfo.video,
   )
