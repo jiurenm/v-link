@@ -37,6 +37,9 @@ export interface Producer {
   name: string
   avatar?: string
   topSongs?: Array<{ id: string; title: string; cover: string }>
+  links?: Array<{ title: string; url: string; category?: string }>
+  topWorks?: Array<{ id: string; url: string; title?: string }>
+  pixivId?: string
 }
 
 export interface Track {

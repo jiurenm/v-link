@@ -2,6 +2,7 @@
  * 将 JSON 数据转换为 Track 格式
  */
 import type { Track, Version } from '@/stores/player'
+import { fixBiliImageUrl } from './bilibili'
 
 export interface SongFromJSON {
   id: string
@@ -42,12 +43,13 @@ export interface SongFromJSON {
  * 将 JSON 歌曲数据转换为 Track 格式
  */
 export function mapSongToTrack(song: SongFromJSON): Track {
+  const fixedCover = fixBiliImageUrl(song.cover_url)
   const track: Track = {
     id: song.id,
     title: song.title,
     artist: song.artist,
-    cover: song.cover_url, // 映射 cover_url 到 cover
-    cover_url: song.cover_url, // 保留原始字段
+    cover: fixedCover, // 映射 cover_url 到 cover
+    cover_url: fixedCover, // 保留原始字段
     duration: song.versions?.[0]?.duration || 0, // 默认使用第一个版本的时长
     is_pjsk: song.is_pjsk,
     voca_db_id: song.voca_db_id,

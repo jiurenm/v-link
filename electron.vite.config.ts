@@ -56,6 +56,22 @@ export default defineConfig({
             Referer: 'https://www.bilibili.com',
           },
         },
+        '/vocadb-api': {
+          target: 'https://vocadb.net',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/vocadb-api/, ''),
+          headers: {
+            'User-Agent': 'V-Link/1.0',
+          },
+        },
+        '/pixiv-api': {
+          target: 'https://www.pixiv.net',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/pixiv-api/, ''),
+          headers: {
+            Referer: 'https://www.pixiv.net',
+          },
+        },
         // 动态代理B站视频流
         // 格式: /bili-video/HOST/path -> https://HOST/path
         '/bili-video': {

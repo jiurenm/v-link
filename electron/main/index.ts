@@ -11,10 +11,16 @@ import iconIcns from '../../public/favicon.icns?asset'
 const appIcon =
   process.platform === 'win32' ? iconIco : process.platform === 'darwin' ? iconIcns : iconPng
 
+interface ProxyItem {
+  target: string
+  headers?: Record<string, string>
+  changeOrigin?: boolean
+}
+
 /**
  * 代理配置
  */
-const proxyConfig = {
+const proxyConfig: Record<string, ProxyItem> = {
   '/pjsekai': {
     target: 'https://pjsekai.com',
     headers: {},
@@ -25,53 +31,29 @@ const proxyConfig = {
       Referer: 'https://www.bilibili.com',
     },
   },
+  '/vocadb-api': {
+    target: 'https://vocadb.net',
+    changeOrigin: true,
+  },
+  '/pixiv-api': {
+    target: 'https://www.pixiv.net',
+    headers: {
+      Referer: 'https://www.pixiv.net',
+    },
+  },
 }
 
 /**
- * 设置生产环境的请求代理
- * 使用 Electron 的 protocol 模块拦截和代理请求
+ * 设置通用的请求头修改（B站相关）
+ * 解决图片 403 和视频流 CORS 问题
  */
-function setupProductionProxy(): void {
-  // 拦截所有 http/https 请求
-  session.defaultSession.webRequest.onBeforeRequest(
-    {
-      urls: ['*://localhost/*', 'file://*/*'],
-    },
-    (details, callback) => {
-      const url = details.url
-
-      // 处理 /bili-video 动态代理
-      // 格式: /bili-video/HOST/path -> https://HOST/path
-      const biliVideoMatch = url.match(/\/bili-video\/([^/]+)(.*)$/)
-      if (biliVideoMatch) {
-        const host = biliVideoMatch[1]
-        const path = biliVideoMatch[2]
-        callback({
-          redirectURL: `https://${host}${path}`,
-        })
-        return
-      }
-
-      // 处理静态代理路径
-      for (const [prefix, config] of Object.entries(proxyConfig)) {
-        if (url.includes(prefix)) {
-          const pathMatch = url.match(new RegExp(`${prefix}(.*)$`))
-          if (pathMatch) {
-            const targetUrl = config.target + pathMatch[1]
-            callback({ redirectURL: targetUrl })
-            return
-          }
-        }
-      }
-
-      callback({})
-    },
-  )
+function setupWebRequestHandlers(): void {
+  const biliDomains = ['*://*.bilibili.com/*', '*://*.bilivideo.com/*', '*://*.hdslb.com/*']
 
   // 修改请求头以添加必要的 Referer 和 Origin
   session.defaultSession.webRequest.onBeforeSendHeaders(
     {
-      urls: ['*://*.bilibili.com/*', '*://*.bilivideo.com/*'],
+      urls: biliDomains,
     },
     (details, callback) => {
       const headers = { ...details.requestHeaders }
@@ -84,7 +66,7 @@ function setupProductionProxy(): void {
   // 处理 CORS 响应头
   session.defaultSession.webRequest.onHeadersReceived(
     {
-      urls: ['*://*.bilibili.com/*', '*://*.bilivideo.com/*'],
+      urls: biliDomains,
     },
     (details, callback) => {
       const headers = { ...details.responseHeaders }
@@ -100,6 +82,43 @@ function setupProductionProxy(): void {
   )
 }
 
+/**
+ * 设置生产环境的请求代理
+ */
+function setupProductionProxy(): void {
+  // 拦截所有 http/https 请求进行路径映射
+  session.defaultSession.webRequest.onBeforeRequest(
+    {
+      urls: ['*://localhost/*', 'file://*/*'],
+    },
+    (details, callback) => {
+      const url = details.url
+
+      // 处理 /bili-video 动态代理
+      const biliVideoMatch = url.match(/\/bili-video\/([^/]+)(.*)$/)
+      if (biliVideoMatch) {
+        callback({
+          redirectURL: `https://${biliVideoMatch[1]}${biliVideoMatch[2]}`,
+        })
+        return
+      }
+
+      // 处理静态代理路径
+      for (const [prefix, config] of Object.entries(proxyConfig)) {
+        if (url.includes(prefix)) {
+          const pathMatch = url.match(new RegExp(`${prefix}(.*)$`))
+          if (pathMatch) {
+            callback({ redirectURL: config.target + pathMatch[1] })
+            return
+          }
+        }
+      }
+
+      callback({})
+    },
+  )
+}
+
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
     width: 1440,
@@ -110,7 +129,7 @@ function createWindow(): void {
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
-      // 生产环境需要允许访问远程内容
+      // 开发环境需要允许访问远程内容，生产环境通过 WebRequest 代理
       webSecurity: is.dev,
     },
   })
@@ -124,7 +143,6 @@ function createWindow(): void {
     return { action: 'deny' }
   })
 
-  // 开发环境加载 Vite 开发服务器，生产环境加载打包后的文件
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
@@ -135,7 +153,10 @@ function createWindow(): void {
 app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.v-link')
 
-  // 仅在生产环境设置代理
+  // 1. 设置通用的 WebRequest 处理（开发和生产环境都需要）
+  setupWebRequestHandlers()
+
+  // 2. 仅在生产环境设置路由代理
   if (!is.dev) {
     setupProductionProxy()
   }

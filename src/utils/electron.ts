@@ -36,6 +36,8 @@ export function getApiBaseUrl(proxyPath: string): string {
     const mapping: Record<string, string> = {
       '/bili-api': 'https://api.bilibili.com',
       '/pjsekai': 'https://pjsekai.com',
+      '/vocadb-api': 'https://vocadb.net',
+      '/pixiv-api': 'https://www.pixiv.net',
     }
     return mapping[proxyPath] || proxyPath
   }

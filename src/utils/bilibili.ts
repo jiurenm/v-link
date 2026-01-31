@@ -14,6 +14,8 @@ export interface VideoInfo {
   title: string
   pic: string
   duration: number
+  desc: string
+  desc_v2?: Array<{ raw_text: string; [key: string]: unknown }>
 }
 
 export interface DashStream {
@@ -59,11 +61,75 @@ export async function getVideoInfo(bvid: string): Promise<VideoInfo | null> {
       title: data.data.title,
       pic: data.data.pic,
       duration: data.data.duration,
+      desc: data.data.desc,
+      desc_v2: data.data.desc_v2,
     }
   } catch (error) {
     console.error('获取视频信息出错:', error)
     return null
   }
+}
+
+/**
+ * 从视频描述中提取 P主 名字
+ * 优先检查 desc_v2 (credit 列表)，然后回退到正则表达式匹配 desc
+ */
+/**
+ * 通用提取函数：根据关键词从描述中提取名字
+ */
+function extractNameByKeywords(desc: string, keywords: string[]): string | null {
+  // 预处理：将全角符号转半角，方便匹配
+  const normalizedDesc = desc.replace(/：/g, ':').replace(/　/g, ' ')
+
+  const lines = normalizedDesc.split('\n')
+
+  for (const line of lines) {
+    for (const keyword of keywords) {
+      // 匹配 "Keyword: Name" 或 "Keyword Name"
+      // 忽略大小写
+      // [^\s@(<（]+ 匹配名字，遇到空格、@、(、（ 停止
+      const regex = new RegExp(`${keyword}(?:.*?)[:\\s]+([^\\s@(<（]+)`, 'i')
+      const match = line.match(regex)
+
+      if (match && match[1]) {
+        let name = match[1].trim()
+
+        // 过滤掉一些无关字符
+        name = name.replace(/^[・\s]+/, '').replace(/[・\s]+$/, '')
+
+        // 如果名字太长可能是误判
+        if (name.length > 20 || name.length < 1) continue
+
+        // 如果包含 "http" 可能是链接，跳过
+        if (name.includes('http')) continue
+
+        return name
+      }
+    }
+  }
+  return null
+}
+
+/**
+ * 从视频描述中提取 P主 名字
+ * 优先检查 desc_v2 (credit 列表)，然后回退到正则表达式匹配 desc
+ */
+export function extractProducerNameFromDesc(
+  desc: string,
+  _descV2: Array<Record<string, unknown>> = [],
+): string | null {
+  // P主相关关键词
+  const keywords = ['Music', 'Composition', 'Composed', 'Original', '作詞', '作曲', '音楽', '曲']
+  return extractNameByKeywords(desc, keywords)
+}
+
+/**
+ * 从视频描述中提取 画师 名字
+ */
+export function extractIllustratorNameFromDesc(desc: string): string | null {
+  // 画师相关关键词
+  const keywords = ['Illust', 'Illustration', 'Art', 'Artwork', 'Drawing', 'イラスト', '絵']
+  return extractNameByKeywords(desc, keywords)
 }
 
 /**
@@ -304,4 +370,18 @@ export async function getAudioUrl(bvid: string): Promise<{
     audioUrl: selectBestUrl(audioStream),
     duration: dashInfo.duration,
   }
+}
+
+/**
+ * 修正 B 站图片 URL
+ * 1. 强制使用 https
+ * 2. 增加 webp 优化
+ */
+export function fixBiliImageUrl(url: string, size = '320w_200h'): string {
+  if (!url) return ''
+  let fixedUrl = url.replace(/^http:/, 'https:')
+  if (fixedUrl.includes('hdslb.com') && !fixedUrl.includes('@')) {
+    fixedUrl += `@${size}.webp`
+  }
+  return fixedUrl
 }

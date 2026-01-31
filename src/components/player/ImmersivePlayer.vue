@@ -11,6 +11,8 @@ import ProducerCard from './ProducerCard.vue'
 import SongDescription from './SongDescription.vue'
 import PlaybackControls from '@/components/common/PlaybackControls.vue'
 
+import { useProducerInfo } from '@/composables/useProducerInfo'
+
 interface Props {
   track: Track | null
 }
@@ -23,9 +25,14 @@ const emit = defineEmits<{
 }>()
 
 const playerStore = usePlayerStore()
+const { fetchProducerInfo } = useProducerInfo()
 
 // 状态管理
 const isSwitchingVersion = ref(false)
+// ... (keep existing refs)
+
+// ...
+
 const showProducerCard = ref(false)
 const showIllustratorCard = ref(false)
 const showTranslation = ref(false)
@@ -187,7 +194,7 @@ watch(
 // 监听当前歌曲变化
 watch(
   () => props.track,
-  () => {
+  async () => {
     if (props.track) {
       extractColor()
       // 只有 PJSK 歌曲才设置默认版本
@@ -197,6 +204,8 @@ watch(
           playerStore.switchVersion(defaultVersion)
         }
       }
+      // 尝试自动获取 P主 信息
+      await fetchProducerInfo(props.track)
     }
   },
   { immediate: true },
