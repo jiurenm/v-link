@@ -3,6 +3,8 @@
  * 用于获取视频信息和DASH流URL
  */
 
+import { getApiBaseUrl, isElectronProduction } from './electron'
+
 const TARGET_DOMAINS = ['upos-sz-mirrorcos.bilivideo.com', 'upos-sz-estgoss.bilivideo.com']
 
 export interface VideoInfo {
@@ -38,7 +40,11 @@ export interface DashPlayInfo {
  */
 export async function getVideoInfo(bvid: string): Promise<VideoInfo | null> {
   try {
-    const response = await fetch(`/bili-api/x/web-interface/view?bvid=${bvid}`)
+    const baseUrl = getApiBaseUrl('/bili-api')
+    const fetchOptions: RequestInit = isElectronProduction()
+      ? { headers: { Referer: 'https://www.bilibili.com' } }
+      : {}
+    const response = await fetch(`${baseUrl}/x/web-interface/view?bvid=${bvid}`, fetchOptions)
     const data = await response.json()
 
     if (data.code !== 0) {
@@ -74,7 +80,11 @@ export async function getDashPlayUrl(bvid: string, cid: number): Promise<DashPla
       fourk: '1', // 允许4K
     })
 
-    const response = await fetch(`/bili-api/x/player/wbi/playurl?${params}`)
+    const baseUrl = getApiBaseUrl('/bili-api')
+    const fetchOptions: RequestInit = isElectronProduction()
+      ? { headers: { Referer: 'https://www.bilibili.com' } }
+      : {}
+    const response = await fetch(`${baseUrl}/x/player/wbi/playurl?${params}`, fetchOptions)
     const data = await response.json()
 
     if (data.code !== 0) {
@@ -180,11 +190,11 @@ export function selectBestAudioStream(streams: DashStream[]): DashStream | null 
 function convertToProxyUrl(originalUrl: string): string {
   try {
     const url = new URL(originalUrl)
-    // 使用 TARGET_DOMAINS[0] 或当前匹配的域名作为固定代理 target
-    // 实际代理逻辑由 vite.config.ts 处理（可能需要 router 支持）
-    // 因为Vite代理只能有一个固定target
-    // vite.config.ts 中的 rewrite 规则是 /bili-video/HOST/path -> /path
-    // 所以我们需要在路径中包含 host
+    // 在 Electron 生产环境直接返回原始 URL（CORS 由主进程处理）
+    if (isElectronProduction()) {
+      return originalUrl
+    }
+    // 开发环境使用代理格式: /bili-video/HOST/path
     return `/bili-video/${url.hostname}${url.pathname}${url.search}`
   } catch {
     return originalUrl

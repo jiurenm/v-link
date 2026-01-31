@@ -19,3 +19,8 @@
   --color-accent-orange: #ff9900;
   --color-accent-purple: #884499;
 }
+
+/* 隐藏滚动条 */
+::-webkit-scrollbar {
+  display: none;
+}

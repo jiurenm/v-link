@@ -3,13 +3,17 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "main": "./out/main/index.js",
   "engines": {
     "node": "^20.19.0 || >=22.12.0"
   },
   "scripts": {
     "dev": "vite",
+    "dev:electron": "electron-vite dev",
     "build": "run-p type-check \"build-only {@}\" --",
+    "build:electron": "electron-vite build",
     "preview": "vite preview",
+    "preview:electron": "electron-vite preview",
     "test:unit": "vitest",
     "build-only": "vite build",
     "type-check": "vue-tsc --build",
@@ -25,6 +29,8 @@
     "vue-router": "^4.6.4"
   },
   "devDependencies": {
+    "@electron-toolkit/preload": "^3.0.2",
+    "@electron-toolkit/utils": "^4.0.0",
     "@tailwindcss/vite": "^4.1.18",
     "@tsconfig/node24": "^24.0.3",
     "@types/jsdom": "^27.0.0",
@@ -36,6 +42,8 @@
     "@vue/test-utils": "^2.4.6",
     "@vue/tsconfig": "^0.8.1",
     "autoprefixer": "^10.4.23",
+    "electron": "^40.1.0",
+    "electron-vite": "^5.0.0",
     "eslint": "^9.39.2",
     "eslint-plugin-oxlint": "~1.35.0",
     "eslint-plugin-vue": "~10.6.2",
