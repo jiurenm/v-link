@@ -2,7 +2,7 @@ import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 
 export interface Version {
-  type: '2D' | '3D'
+  type: string
   label: string
   bvid?: string
   duration: number
@@ -13,7 +13,7 @@ export interface Version {
   videoUrl?: string
 }
 
-export type VersionType = '2D' | '3D' | '无MV'
+export type VersionType = string // 使用 label 作为版本标识，如 "2D MV 虚拟歌姬ver"、"3D MV"、"无MV" 等
 
 export interface PJSKMeta {
   main_group?: string
@@ -226,7 +226,8 @@ export const usePlayerStore = defineStore('player', () => {
         currentTime.value = 0
       }
     } else if (track?.versions) {
-      const versionData = track.versions.find((v) => v.type === version)
+      // 使用 label 查找版本
+      const versionData = track.versions.find((v) => v.label === version)
       if (versionData) {
         duration.value = versionData.duration
         // 切换版本时重置时间到0，因为不同版本的时间长度不同

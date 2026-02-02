@@ -26,7 +26,7 @@ export interface SongFromJSON {
   } | null
   voca_db_id?: number
   versions?: Array<{
-    type: '2D' | '3D'
+    type: string
     label: string
     bvid?: string
     duration: number
@@ -75,8 +75,8 @@ export function mapSongToTrack(song: SongFromJSON): Track {
       }),
     )
 
-    // 设置默认版本为第一个版本
-    track.currentVersion = track.versions[0]?.type || '2D'
+    // 设置默认版本为第一个版本的 label
+    track.currentVersion = track.versions[0]?.label || '2D'
 
     // 如果只有一个版本，duration 使用该版本的时长
     if (track.versions.length === 1 && track.versions[0]) {

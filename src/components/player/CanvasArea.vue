@@ -46,10 +46,11 @@ const isNoMVMode = computed(() => props.currentVersion === '无MV')
 const currentVersionData = computed(() => {
   if (!props.track?.versions) return null
   if (isNoMVMode.value) {
-    // 无MV模式：使用2D版本的音频
-    return props.track.versions.find((v) => v.type === '2D') || props.track.versions[0]
+    // 无MV模式：优先使用第一个版本的音频
+    return props.track.versions[0] || null
   }
-  return props.track.versions.find((v) => v.type === props.currentVersion)
+  // 使用 label 查找对应版本
+  return props.track.versions.find((v) => v.label === props.currentVersion)
 })
 
 // 判断是否应该使用DASH播放器（有bvid的情况）
@@ -68,12 +69,12 @@ const activeMediaUrl = computed(() => {
   if (shouldUseDashPlayer.value) return null // 使用DASH播放器时不需要URL
 
   if (isNoMVMode.value) {
-    // 无MV模式逻辑：尝试寻找2D资源获取音频，否则取列表第一个
-    const audioSource =
-      props.track.versions?.find((v) => v.type === '2D') || props.track.versions?.[0]
+    // 无MV模式逻辑：使用第一个版本的音频资源
+    const audioSource = props.track.versions?.[0]
     return audioSource?.videoUrl || null
   }
-  return props.track.versions?.find((v) => v.type === props.currentVersion)?.videoUrl || null
+  // 使用 label 查找对应版本
+  return props.track.versions?.find((v) => v.label === props.currentVersion)?.videoUrl || null
 })
 
 // 获取当前处于活跃状态的 DOM 元素

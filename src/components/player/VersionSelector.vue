@@ -21,10 +21,10 @@ const availableVersions = computed<VersionType[]>(() => {
 
   const versions: VersionType[] = ['无MV']
 
-  // 如果有版本信息，添加 2D 和 3D 选项
+  // 如果有版本信息，使用 label 作为选项
   if (props.track.versions && props.track.versions.length > 0) {
-    const videoVersions = props.track.versions.map((v) => v.type as '2D' | '3D')
-    versions.push(...videoVersions)
+    const videoLabels = props.track.versions.map((v) => v.label)
+    versions.push(...videoLabels)
   }
 
   return versions

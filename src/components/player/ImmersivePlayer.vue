@@ -162,7 +162,7 @@ const handleVersionChange = async (version: VersionType) => {
     isSwitchingVersion.value = false
 
     // 检查是否需要对齐游戏片段
-    const versionData = props.track?.versions?.find((v) => v.type === version)
+    const versionData = props.track?.versions?.find((v) => v.label === version)
     if (versionData && props.track && versionData.duration < props.track.duration) {
       if (playerStore.currentTime > versionData.duration) {
         // 可以显示提示
@@ -199,7 +199,8 @@ watch(
       extractColor()
       // 只有 PJSK 歌曲才设置默认版本
       if (props.track.is_pjsk && props.track.versions && props.track.versions.length > 0) {
-        const defaultVersion = props.track.versions[0]?.type
+        // 使用第一个版本的 label 作为默认版本
+        const defaultVersion = props.track.versions[0]?.label
         if (defaultVersion && defaultVersion !== currentVersion.value) {
           playerStore.switchVersion(defaultVersion)
         }
@@ -402,8 +403,9 @@ onUnmounted(() => {
         style="min-height: 16vh"
       >
         <!-- 版本选择器 - 半透明胶囊状，放在视频正下方 -->
+        <!-- 版本选择器：只要是 PJSK 歌曲就显示（包含无MV选项） -->
         <VersionSelector
-          v-if="track?.is_pjsk && track?.versions && track.versions.length > 1"
+          v-if="track?.is_pjsk"
           :track="track"
           :current-version="currentVersion"
           @version-change="handleVersionChange"
