@@ -1,8 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
-import { usePlayerStore } from '@/stores/player'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 import type { Track, VersionType } from '@/stores/player'
-import DashPlayer from './DashPlayer.vue'
 
 interface Props {
   track: Track | null
@@ -17,242 +15,14 @@ const props = withDefaults(defineProps<Props>(), {
   currentTime: 0,
 })
 
-const playerStore = usePlayerStore()
-
 // --- DOM 引用 ---
 const canvasRef = ref<HTMLDivElement>()
-const videoRef = ref<HTMLVideoElement>()
-const audioRef = ref<HTMLAudioElement>()
-const dashPlayerRef = ref<InstanceType<typeof DashPlayer>>()
 
 // --- 响应式状态 ---
-const localTime = ref(0) // 核心：用于驱动本地进度条/UI 的高频时间
 const parallaxX = ref(0)
 const parallaxY = ref(0)
 const glitchProgress = ref(0)
-const isDashLoading = ref(false)
-
-// --- 内部变量 (非响应式，避免性能开销) ---
-let rafId: number | null = null
-let lastStoreSyncTime = 0
-let isSeeking = false
-let isChangingSource = false
-let glitchInterval: number | null = null
-
-// --- 计算属性 ---
-const isNoMVMode = computed(() => props.currentVersion === '无MV')
-
-// 获取当前版本的数据
-const currentVersionData = computed(() => {
-  if (!props.track?.versions) return null
-  if (isNoMVMode.value) {
-    // 无MV模式：优先使用第一个版本的音频
-    return props.track.versions[0] || null
-  }
-  // 使用 label 查找对应版本
-  return props.track.versions.find((v) => v.label === props.currentVersion)
-})
-
-// 判断是否应该使用DASH播放器（有bvid的情况）
-const shouldUseDashPlayer = computed(() => {
-  return !!currentVersionData.value?.bvid
-})
-
-// 获取当前版本的bvid
-const currentBvid = computed(() => {
-  return currentVersionData.value?.bvid || null
-})
-
-// 计算当前应播放的资源 URL (用于旧的videoUrl模式)
-const activeMediaUrl = computed(() => {
-  if (!props.track) return null
-  if (shouldUseDashPlayer.value) return null // 使用DASH播放器时不需要URL
-
-  if (isNoMVMode.value) {
-    // 无MV模式逻辑：使用第一个版本的音频资源
-    const audioSource = props.track.versions?.[0]
-    return audioSource?.videoUrl || null
-  }
-  // 使用 label 查找对应版本
-  return props.track.versions?.find((v) => v.label === props.currentVersion)?.videoUrl || null
-})
-
-// 获取当前处于活跃状态的 DOM 元素
-const activeMediaRef = computed(() => (isNoMVMode.value ? audioRef.value : videoRef.value))
-
-const emit = defineEmits<{
-  ended: []
-}>()
-
-// --- 核心方法：时间同步调度器 ---
-
-const startUpdateLoop = () => {
-  if (rafId) cancelAnimationFrame(rafId)
-
-  const loop = () => {
-    const el = activeMediaRef.value
-    if (el && !el.paused && !isSeeking && !isChangingSource) {
-      // 1. 高频更新本地值 (60fps)，用于组件内部渲染
-      localTime.value = el.currentTime
-
-      // 2. 节流更新 Store (每秒同步一次全局状态，减少渲染压力)
-      const now = performance.now()
-      if (now - lastStoreSyncTime > 200) {
-        playerStore.setCurrentTime(el.currentTime)
-        lastStoreSyncTime = now
-      }
-    }
-    rafId = requestAnimationFrame(loop)
-  }
-  rafId = requestAnimationFrame(loop)
-}
-
-const stopUpdateLoop = () => {
-  if (rafId) {
-    cancelAnimationFrame(rafId)
-    rafId = null
-  }
-}
-
-// --- 媒体控制逻辑 ---
-
-const handleEnded = () => {
-  emit('ended')
-}
-
-const initMedia = async () => {
-  // 如果使用DASH播放器，不需要初始化传统媒体元素
-  if (shouldUseDashPlayer.value) {
-    return
-  }
-
-  const el = activeMediaRef.value
-  const url = activeMediaUrl.value
-
-  if (!el || !url) return
-
-  try {
-    isChangingSource = true
-    el.pause()
-    el.load() // 强制重新加载资源
-
-    // 等待元数据加载以获取正确的时间控制权
-    await new Promise<void>((resolve, reject) => {
-      const timeout = setTimeout(() => reject('Timeout'), 8000)
-      el.onloadedmetadata = () => {
-        clearTimeout(timeout)
-        resolve()
-      }
-      el.onerror = () => reject('Load Error')
-    })
-
-    // 同步当前状态
-    el.volume = playerStore.volume
-    el.currentTime = props.currentTime // 继承切换前的时间点
-    localTime.value = props.currentTime
-
-    if (props.isPlaying) {
-      await el.play().catch(() => console.warn('Autoplay blocked'))
-    }
-  } catch (err) {
-    console.error('Media initialization failed:', err)
-  } finally {
-    isChangingSource = false
-  }
-}
-
-// --- DASH 播放器事件处理 ---
-const handleDashTimeUpdate = (time: number) => {
-  localTime.value = time
-  // DashPlayer 已经控制了更新频率(200ms)，这里直接更新 Store 即可，避免双重节流导致的时间混叠
-  playerStore.setCurrentTime(time)
-}
-
-const handleDashDurationChange = (duration: number) => {
-  playerStore.setDuration(duration)
-}
-
-const handleDashLoading = (loading: boolean) => {
-  isDashLoading.value = loading
-}
-
-const handleDashError = (message: string) => {
-  console.error('DASH播放器错误:', message)
-}
-
-// --- 监听器 ---
-
-// 1. 监听 URL 变化（切换版本或歌曲）- 仅用于传统播放模式
-watch(
-  [activeMediaUrl, isNoMVMode],
-  async () => {
-    if (!shouldUseDashPlayer.value) {
-      await nextTick() // 等待 v-if 切换 DOM
-      await initMedia()
-    }
-  },
-  { immediate: true },
-)
-
-// 2. 监听外部播放/暂停指令
-watch(
-  () => props.isPlaying,
-  (playing) => {
-    if (shouldUseDashPlayer.value) {
-      // DASH播放器由props控制，不需要额外处理
-      return
-    }
-
-    const el = activeMediaRef.value
-    if (!el || isChangingSource) return
-
-    if (playing) {
-      el.play().catch(() => {})
-      startUpdateLoop()
-    } else {
-      el.pause()
-      stopUpdateLoop()
-      playerStore.setCurrentTime(el.currentTime) // 暂停时同步最终精确时间
-    }
-  },
-  { immediate: true },
-)
-
-// 3. 监听外部拖动进度条 (Seek)
-watch(
-  () => props.currentTime,
-  (time) => {
-    if (shouldUseDashPlayer.value) {
-      // DASH播放器由props控制
-      return
-    }
-
-    const el = activeMediaRef.value
-    if (!el || isChangingSource) return
-
-    // 只有当外部时间与本地媒体时间差异超过 1s 时（代表用户点击了进度条），才执行 seek
-    if (Math.abs(el.currentTime - time) > 1) {
-      isSeeking = true
-      el.currentTime = time
-      localTime.value = time
-
-      // 监听 seek 完成
-      const onSeeked = () => {
-        isSeeking = false
-        el.removeEventListener('seeked', onSeeked)
-      }
-      el.addEventListener('seeked', onSeeked)
-    }
-  },
-)
-
-// 4. 音量同步
-watch(
-  () => playerStore.volume,
-  (v) => {
-    if (activeMediaRef.value) activeMediaRef.value.volume = v
-  },
-)
+const glitchInterval = ref<number | null>(null)
 
 // --- 装饰性效果 (视差 & Glitch) ---
 
@@ -270,12 +40,14 @@ const handleMouseMove = (e: MouseEvent) => {
 watch(
   () => props.isSwitching,
   (switching) => {
-    if (glitchInterval) clearInterval(glitchInterval)
+    if (glitchInterval.value) clearInterval(glitchInterval.value)
     if (switching) {
       glitchProgress.value = 0
-      glitchInterval = window.setInterval(() => {
+      glitchInterval.value = window.setInterval(() => {
         glitchProgress.value += 4.5
-        if (glitchProgress.value >= 100) clearInterval(glitchInterval!)
+        if (glitchProgress.value >= 100 && glitchInterval.value) {
+          clearInterval(glitchInterval.value)
+        }
       }, 50)
     }
   },
@@ -285,22 +57,11 @@ watch(
 
 onMounted(() => {
   window.addEventListener('mousemove', handleMouseMove, { passive: true })
-  if (props.isPlaying && !shouldUseDashPlayer.value) startUpdateLoop()
-
-  // 处理移动端自动播放限制
-  const unlock = () => {
-    if (props.isPlaying && activeMediaRef.value?.paused) {
-      activeMediaRef.value.play().catch(() => {})
-    }
-    document.removeEventListener('click', unlock)
-  }
-  document.addEventListener('click', unlock)
 })
 
 onUnmounted(() => {
-  stopUpdateLoop()
   window.removeEventListener('mousemove', handleMouseMove)
-  if (glitchInterval) clearInterval(glitchInterval)
+  if (glitchInterval.value) clearInterval(glitchInterval.value)
 })
 </script>
 
@@ -338,75 +99,24 @@ onUnmounted(() => {
         willChange: 'transform',
       }"
     >
-      <!-- DASH 播放器模式 (bvid模式) -->
-      <DashPlayer
-        v-if="shouldUseDashPlayer && !isNoMVMode"
-        ref="dashPlayerRef"
-        :bvid="currentBvid"
-        :is-playing="isPlaying"
-        :current-time="currentTime"
-        :volume="playerStore.volume"
-        :audio-only="false"
-        class="w-full h-full"
-        :class="{ 'opacity-0': isSwitching || isDashLoading }"
-        @timeupdate="handleDashTimeUpdate"
-        @durationchange="handleDashDurationChange"
-        @loading="handleDashLoading"
-        @error="handleDashError"
-        @ended="handleEnded"
-      />
+      <!-- Teleport Target -->
+      <div id="immersive-player-target" class="w-full h-full relative z-10"></div>
 
-      <!-- DASH 音频模式 (无MV模式，使用2D版本的bvid) -->
-      <DashPlayer
-        v-else-if="shouldUseDashPlayer && isNoMVMode"
-        ref="dashPlayerRef"
-        :bvid="currentBvid"
-        :is-playing="isPlaying"
-        :current-time="currentTime"
-        :volume="playerStore.volume"
-        :audio-only="true"
-        class="hidden"
-        @timeupdate="handleDashTimeUpdate"
-        @durationchange="handleDashDurationChange"
-        @loading="handleDashLoading"
-        @error="handleDashError"
-        @ended="handleEnded"
-      />
-
-      <!-- 传统视频播放模式 (videoUrl模式) -->
-      <video
-        v-else-if="!isNoMVMode && activeMediaUrl"
-        ref="videoRef"
-        :key="activeMediaUrl"
-        :src="activeMediaUrl"
-        playsinline
-        class="w-full h-full object-cover transition-opacity duration-700"
-        :class="{ 'opacity-0': isSwitching || isChangingSource }"
-        @ended="handleEnded"
-      />
-
-      <!-- 无MV模式显示封面图 -->
+      <!-- 无MV模式显示封面图 (仅作为备用的视觉层，实际播放器在 PersistentPlayer) -->
       <img
-        v-if="isNoMVMode && track?.cover"
+        v-if="currentVersion === '无MV' && track?.cover"
         :src="track.cover"
         referrerpolicy="no-referrer"
-        class="w-full h-full object-cover transition-opacity duration-700"
-        :class="{ 'opacity-0': isSwitching || isChangingSource }"
+        class="w-full h-full object-cover absolute inset-0 -z-10"
+        :class="{ 'opacity-0': isSwitching }"
       />
     </div>
 
-    <!-- 传统音频播放器 (无MV模式，非bvid) -->
-    <audio
-      v-if="isNoMVMode && activeMediaUrl && !shouldUseDashPlayer"
-      ref="audioRef"
-      :src="activeMediaUrl"
-      class="hidden"
-      @ended="handleEnded"
-    />
+    <!-- 传统音频播放器 (无MV模式，非bvid) - 已移动到 PersistentPlayer -->
 
     <Transition name="fade">
       <div
-        v-if="isSwitching || isChangingSource || isDashLoading"
+        v-if="isSwitching"
         class="absolute inset-0 z-20 flex items-center justify-center bg-black/60 backdrop-blur-md"
       >
         <div class="text-center">

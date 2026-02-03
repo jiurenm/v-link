@@ -289,10 +289,11 @@ const handleTouchEnd = () => {
 
 onMounted(() => {
   extractColor()
-  // 移除进入动画，直接显示
+  playerStore.setPlayerActive(true) // 激活播放器，允许 Teleport
 })
 
 onUnmounted(() => {
+  playerStore.setPlayerActive(false) // 只有当组件真正卸载时才禁用
   if (neonFlashTimeout) {
     clearTimeout(neonFlashTimeout)
   }

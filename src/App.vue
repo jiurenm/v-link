@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import PlayerBar from '@/components/PlayerBar.vue'
+import PersistentPlayer from '@/components/PersistentPlayer.vue'
 import { usePlayerStore } from '@/stores/player'
 
 const route = useRoute()
@@ -22,6 +23,7 @@ const showPlayerBar = computed(() => {
     <router-view />
   </div>
   <PlayerBar v-if="showPlayerBar" />
+  <PersistentPlayer />
 </template>
 
 <style scoped></style>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, watch, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePlayerStore } from '@/stores/player'
 import PlaylistModal from './PlaylistModal.vue'
@@ -22,8 +22,6 @@ const isSwipeUp = ref(false)
 const swipeOffset = ref(0)
 const hasSwiped = ref(false) // 标记是否发生了滑动
 const playerBarRef = ref<HTMLElement | null>(null)
-
-let intervalId: number | null = null
 
 const togglePlay = () => {
   playerStore.togglePlay()
@@ -136,47 +134,15 @@ const closePlayer = () => {
   // 可以选择清空播放列表或保持
 }
 
-// 管理播放进度定时器
-const startTimer = () => {
-  if (!intervalId && playerStore.isPlaying) {
-    intervalId = window.setInterval(() => {
-      if (playerStore.currentTime < playerStore.duration) {
-        playerStore.setCurrentTime(playerStore.currentTime + 1)
-      } else {
-        playerStore.nextTrack()
-      }
-    }, 1000)
-  }
-}
-
-const stopTimer = () => {
-  if (intervalId) {
-    clearInterval(intervalId)
-    intervalId = null
-  }
-}
-
-// 监听播放状态变化
-watch(
-  () => playerStore.isPlaying,
-  (playing) => {
-    if (playing) {
-      startTimer()
-    } else {
-      stopTimer()
-    }
-  },
-)
+// 管理播放进度定时器 - 已移除，由 PersistentPlayer 统一驱动
+// PersistentPlayer 会实时更新 store 中的 currentTime
 
 onMounted(() => {
-  // 如果已经在播放，启动定时器
-  if (playerStore.isPlaying) {
-    startTimer()
-  }
+  // 移除定时器逻辑
 })
 
 onUnmounted(() => {
-  stopTimer()
+  // 移除定时器逻辑
 })
 </script>
 

@@ -83,6 +83,9 @@ export const usePlayerStore = defineStore('player', () => {
   // 当前版本（2D/3D/无MV）
   const currentVersion = ref<VersionType>('2D')
 
+  // 播放器页面是否处于激活状态（用于控制视频 Teleport）
+  const isPlayerActive = ref(false)
+
   // 计算当前播放的歌曲
   const currentTrack = computed((): Track | null => {
     if (queue.value.length === 0) {
@@ -236,6 +239,11 @@ export const usePlayerStore = defineStore('player', () => {
     }
   }
 
+  // 设置播放器激活状态
+  function setPlayerActive(active: boolean) {
+    isPlayerActive.value = active
+  }
+
   return {
     // 状态
     queue,
@@ -263,5 +271,7 @@ export const usePlayerStore = defineStore('player', () => {
     setVolume,
     setDuration,
     switchVersion,
+    isPlayerActive,
+    setPlayerActive,
   }
 })
