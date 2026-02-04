@@ -65,25 +65,42 @@ export function useProducerInfo() {
    * Fetch producer and illustrator info for a track
    */
   async function fetchProducerInfo(track: Track | null) {
+    console.log(track)
     if (!track) {
       producerInfo.value = null
       return
     }
 
     // Identify unique key for the video source
-    const bvid =
-      track.currentVersion && track.currentVersion !== '无MV'
-        ? track.versions?.find((v) => v.type === track.currentVersion)?.bvid
-        : track.is_pjsk
-          ? track.versions?.[0]?.bvid
-          : track.id // Fallback for ID as BVID in some cases
+    // We try to find the BVID from the current version, matching by label or type
+    // If not found, we fallback to the first version that has a BVID, or the track ID
+    let bvid = ''
+    const currentVersionLabel = track.currentVersion
+
+    if (currentVersionLabel && currentVersionLabel !== '无MV') {
+      const version = track.versions?.find(
+        (v) => v.label === currentVersionLabel || v.type === currentVersionLabel,
+      )
+      if (version?.bvid) {
+        bvid = version.bvid
+      }
+    }
+
+    // Fallback: use first version with a BVID if still not found
+    if (!bvid) {
+      bvid = track.versions?.find((v) => v.bvid)?.bvid || ''
+    }
+
+    // Secondary Fallback: for non-PJSK songs, the ID might be the BVID
+    if (!bvid && !track.is_pjsk && track.id?.startsWith('BV')) {
+      bvid = track.id
+    }
 
     if (!bvid || !bvid.startsWith('BV')) {
       return
     }
 
-    // Check if we already have full info (both likely populated or cached)
-    // If track has them, we are good. But we might want to check if we can fill in missing ones.
+    // Check if we already have full info
     if (track.producer && track.illustrator) {
       return
     }
@@ -99,6 +116,11 @@ export function useProducerInfo() {
       if (!track.illustrator && cachedCredits.illustrator) {
         track.illustrator = producerCache.get(cachedCredits.illustrator)
       }
+
+      // If we populated at least one or confirmed we have the info, we can return
+      if (track.producer || track.illustrator) {
+        return
+      }
     }
 
     // If still missing something, we might need to fetch
@@ -113,6 +135,7 @@ export function useProducerInfo() {
     try {
       // 3. Fetch Bilibili Info
       const videoInfo = await getVideoInfo(bvid)
+      console.log(videoInfo)
       if (!videoInfo) {
         return
       }
@@ -120,6 +143,8 @@ export function useProducerInfo() {
       // 4. Parse Description
       const producerName = extractProducerNameFromDesc(videoInfo.desc, videoInfo.desc_v2)
       const illustratorName = extractIllustratorNameFromDesc(videoInfo.desc)
+
+      console.log(producerName, illustratorName)
 
       const newCredits: { producer?: string; illustrator?: string } = {}
 
