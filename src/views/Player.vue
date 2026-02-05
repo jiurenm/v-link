@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch, nextTick } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { usePlayerStore, type Track } from '@/stores/player'
 import ImmersivePlayer from '@/components/player/ImmersivePlayer.vue'
@@ -28,33 +28,27 @@ const initializePlayback = async () => {
   // 从路由参数获取播放的歌曲ID
   const trackId = route.params.id as string
 
-  // 如果没有 trackId，且列表为空，则什么都不做，保持列表为空
-  if (!trackId) {
+  if (!trackId) return
+
+  // 1. 尝试在当前队列中找
+  const existingIndex = playerStore.queue.findIndex((t) => t.id === trackId)
+  if (existingIndex >= 0) {
+    if (playerStore.currentIndex !== existingIndex) {
+      playerStore.playTrack(existingIndex)
+    } else {
+      playerStore.isPlaying = true
+    }
     return
   }
 
-  // 如果播放列表为空，则从服务获取数据并定位该歌曲
-  if (playerStore.queue.length === 0) {
-    const tracks = await fetchTracks()
-    const trackIndex = tracks.findIndex((t) => t.id === trackId)
+  // 2. 如果没找到，从全局数据中找并加入队列
+  const tracks = await fetchTracks()
+  const targetTrack = tracks.find((t) => t.id === trackId)
 
-    if (trackIndex >= 0) {
-      playerStore.setQueue(tracks, trackIndex)
-      await nextTick()
-      playerStore.playTrack(trackIndex)
-    } else {
-      console.warn(`Track with id ${trackId} not found in database.`)
-    }
+  if (targetTrack) {
+    playerStore.playTrackNow(targetTrack)
   } else {
-    // 如果播放列表已存在，根据 trackId 切换到对应歌曲
-    const trackIndex = playerStore.queue.findIndex((t) => t.id === trackId)
-    if (trackIndex >= 0) {
-      if (playerStore.currentIndex === trackIndex && playerStore.currentTrack) {
-        playerStore.isPlaying = true
-      } else {
-        playerStore.playTrack(trackIndex)
-      }
-    }
+    console.warn(`Track with id ${trackId} not found in database.`)
   }
 }
 

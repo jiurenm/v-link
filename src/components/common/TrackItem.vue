@@ -22,6 +22,7 @@ withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   click: []
   play: []
+  'add-to-queue': [event: MouseEvent]
 }>()
 
 const coverSizeClass = {
@@ -59,15 +60,32 @@ const coverSizeClass = {
     >
       <div v-if="isActive && isPlaying" class="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
       <span v-if="isActive" class="text-primary text-sm">正在播放</span>
-      <button
-        v-else
-        @click.stop="emit('play')"
-        class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30"
-      >
-        <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M8 5v14l11-7z" />
-        </svg>
-      </button>
+
+      <div v-else class="flex items-center gap-1.5">
+        <button
+          @click.stop="emit('add-to-queue', $event)"
+          title="加入播放列表"
+          class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
+        >
+          <svg class="w-4 h-4 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+            />
+          </svg>
+        </button>
+        <button
+          @click.stop="emit('play')"
+          title="立即播放"
+          class="w-8 h-8 rounded-full bg-primary/80 flex items-center justify-center hover:bg-primary transition-colors"
+        >
+          <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M8 5v14l11-7z" />
+          </svg>
+        </button>
+      </div>
     </div>
   </div>
 </template>

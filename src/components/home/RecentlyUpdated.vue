@@ -10,6 +10,7 @@ defineProps<Props>()
 const emit = defineEmits<{
   'track-click': [id: string]
   'track-play': [id: string]
+  'track-add': [id: string, event: MouseEvent]
 }>()
 
 const formatDate = (timestamp?: number): string => {
@@ -62,15 +63,30 @@ const formatDate = (timestamp?: number): string => {
             class="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700"
           />
 
-          <!-- Hover Play Button -->
+          <!-- Hover Play/Add Buttons -->
           <div
-            class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20 backdrop-blur-sm z-20"
+            class="absolute inset-0 flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-sm z-20"
           >
             <button
-              class="w-12 h-12 rounded-full bg-emerald-400/90 backdrop-blur-sm flex items-center justify-center hover:bg-emerald-400 transition-colors shadow-lg"
+              class="w-10 h-10 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center hover:bg-white/20 transition-colors shadow-lg"
+              title="加入播放列表"
+              @click.stop="emit('track-add', track.id, $event)"
+            >
+              <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                />
+              </svg>
+            </button>
+            <button
+              class="w-10 h-10 rounded-full bg-emerald-400/90 backdrop-blur-sm flex items-center justify-center hover:bg-emerald-400 transition-colors shadow-lg"
+              title="立即播放"
               @click.stop="emit('track-play', track.id)"
             >
-              <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M8 5v14l11-7z" />
               </svg>
             </button>

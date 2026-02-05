@@ -111,8 +111,40 @@ export const usePlayerStore = defineStore('player', () => {
   }
 
   // 添加歌曲到播放列表
-  function addToQueue(tracks: Track[]) {
-    queue.value.push(...tracks)
+  function addToQueue(tracks: Track | Track[]) {
+    const tracksToAdd = Array.isArray(tracks) ? tracks : [tracks]
+    queue.value.push(...tracksToAdd)
+  }
+
+  // 从播放列表移除歌曲
+  function removeFromQueue(index: number) {
+    if (index >= 0 && index < queue.value.length) {
+      queue.value.splice(index, 1)
+      // 如果移除的是当前播放之前的歌曲，调整索引
+      if (index < currentIndex.value) {
+        currentIndex.value--
+      } else if (index === currentIndex.value) {
+        // 如果移除的是当前播放的歌曲
+        if (queue.value.length === 0) {
+          isPlaying.value = false
+          currentIndex.value = 0
+        } else {
+          // 播放下一首（如果已经是最后一首则索引会超出，playTrack会处理）
+          playTrack(currentIndex.value)
+        }
+      }
+    }
+  }
+
+  // 立即播放指定歌曲（如果不在列表中则添加）
+  function playTrackNow(track: Track) {
+    const index = queue.value.findIndex((t) => t.id === track.id)
+    if (index !== -1) {
+      playTrack(index)
+    } else {
+      addToQueue(track)
+      playTrack(queue.value.length - 1)
+    }
   }
 
   // 播放/暂停
@@ -149,15 +181,26 @@ export const usePlayerStore = defineStore('player', () => {
       return
     }
 
-    if (currentIndex.value > 0) {
-      currentIndex.value--
+    if (shuffle.value) {
+      // 随机模式下，随机选一个
+      let randomIndex = currentIndex.value
+      if (queue.value.length > 1) {
+        while (randomIndex === currentIndex.value) {
+          randomIndex = Math.floor(Math.random() * queue.value.length)
+        }
+      }
+      currentIndex.value = randomIndex
     } else {
-      // 列表循环模式下，从第一首跳到最后一首
-      if (repeat.value === 'all') {
-        currentIndex.value = queue.value.length - 1
+      if (currentIndex.value > 0) {
+        currentIndex.value--
       } else {
-        // 非循环模式下，已经在第一首，不执行任何操作
-        return
+        // 列表循环模式下，从第一首跳到最后一首
+        if (repeat.value === 'all') {
+          currentIndex.value = queue.value.length - 1
+        } else {
+          // 非循环模式下，已经在第一首，不执行任何操作
+          return
+        }
       }
     }
     currentTime.value = 0
@@ -173,14 +216,26 @@ export const usePlayerStore = defineStore('player', () => {
       return
     }
 
-    if (currentIndex.value < queue.value.length - 1) {
-      currentIndex.value++
+    if (shuffle.value) {
+      // 随机模式下
+      let randomIndex = currentIndex.value
+      if (queue.value.length > 1) {
+        while (randomIndex === currentIndex.value) {
+          randomIndex = Math.floor(Math.random() * queue.value.length)
+        }
+      }
+      currentIndex.value = randomIndex
     } else {
-      if (repeat.value === 'all') {
-        currentIndex.value = 0
+      if (currentIndex.value < queue.value.length - 1) {
+        currentIndex.value++
       } else {
-        isPlaying.value = false
-        return
+        if (repeat.value === 'all') {
+          currentIndex.value = 0
+        } else {
+          // 列表结束且非循环模式，停止播放
+          isPlaying.value = false
+          return
+        }
       }
     }
     currentTime.value = 0
@@ -261,6 +316,8 @@ export const usePlayerStore = defineStore('player', () => {
     // 方法
     setQueue,
     addToQueue,
+    removeFromQueue,
+    playTrackNow,
     togglePlay,
     playTrack,
     previousTrack,

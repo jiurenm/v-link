@@ -265,8 +265,8 @@ onUnmounted(() => {
             />
           </div>
 
-          <!-- 播放列表 -->
           <button
+            id="playlist-toggle-btn"
             @click="togglePlaylist"
             class="text-white/80 hover:text-white transition-colors p-1.5 relative"
           >

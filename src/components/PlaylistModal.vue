@@ -86,6 +86,20 @@ onUnmounted(() => {
               <span v-if="index === playerStore.currentIndex" class="text-primary text-sm"
                 >正在播放</span
               >
+              <button
+                @click.stop="playerStore.removeFromQueue(index)"
+                class="opacity-0 group-hover:opacity-100 p-2 text-white/40 hover:text-red-400 transition-all"
+                title="从列表删除"
+              >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
             </div>
           </div>
         </div>

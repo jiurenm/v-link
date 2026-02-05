@@ -7,6 +7,7 @@ import GlobalTopTrends from '@/components/home/GlobalTopTrends.vue'
 import GroupImmersiveZone from '@/components/home/GroupImmersiveZone.vue'
 import RecentlyUpdated from '@/components/home/RecentlyUpdated.vue'
 import { fetchTracks } from '@/services/dataService'
+import { useUIStore } from '@/stores/ui'
 
 defineOptions({
   name: 'HomePage',
@@ -14,6 +15,7 @@ defineOptions({
 
 const router = useRouter()
 const playerStore = usePlayerStore()
+const uiStore = useUIStore()
 
 // 团体颜色映射
 const groupColors: Record<string, string> = {
@@ -76,17 +78,24 @@ onMounted(async () => {
   })
 })
 
-const goToPlayer = (id: string) => {
+const goToPlayer = (id: string, onlyQueue = false, event?: MouseEvent) => {
   const targetTrack = allTracks.value.find((track) => track.id === id)
   if (!targetTrack) return
 
-  const trackIndex = allTracks.value.findIndex((t) => t.id === id)
-  if (trackIndex >= 0) {
-    playerStore.setQueue(allTracks.value, trackIndex)
-    playerStore.isPlaying = true
-    playerStore.playTrack(trackIndex)
-    router.push({ name: 'player', params: { id } })
+  if (onlyQueue) {
+    playerStore.addToQueue(targetTrack)
+    if (event) {
+      uiStore.addFlyItem({
+        x: event.clientX,
+        y: event.clientY,
+        image: targetTrack.cover,
+      })
+    }
+    return
   }
+
+  playerStore.playTrackNow(targetTrack)
+  router.push({ name: 'player', params: { id } })
 }
 
 // 获取排序后的团体列表
@@ -109,10 +118,20 @@ const sortedGroups = computed(() => {
     <NavBar />
 
     <!-- 全站热门榜单 -->
-    <GlobalTopTrends :tracks="topTrends" @track-click="goToPlayer" @track-play="goToPlayer" />
+    <GlobalTopTrends
+      :tracks="topTrends"
+      @track-click="goToPlayer"
+      @track-play="goToPlayer"
+      @track-add="(id, event) => goToPlayer(id, true, event)"
+    />
 
     <!-- 最近更新 -->
-    <RecentlyUpdated :tracks="recentlyUpdated" @track-click="goToPlayer" @track-play="goToPlayer" />
+    <RecentlyUpdated
+      :tracks="recentlyUpdated"
+      @track-click="goToPlayer"
+      @track-play="goToPlayer"
+      @track-add="(id, event) => goToPlayer(id, true, event)"
+    />
 
     <!-- 团体沉浸式分区 -->
     <GroupImmersiveZone
@@ -124,6 +143,7 @@ const sortedGroups = computed(() => {
       :glow-position="groupGlowPositions[groupName] || 'left'"
       @track-click="goToPlayer"
       @track-play="goToPlayer"
+      @track-add="(id, event) => goToPlayer(id, true, event)"
     />
   </div>
 </template>

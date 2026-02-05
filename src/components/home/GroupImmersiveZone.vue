@@ -13,6 +13,7 @@ const props = defineProps<Props>()
 const emit = defineEmits<{
   'track-click': [id: string]
   'track-play': [id: string]
+  'track-add': [id: string, event: MouseEvent]
 }>()
 
 // 获取标签文本和颜色
@@ -35,6 +36,11 @@ const handleCardClick = (track: Track) => {
 const handleCardPlay = (e: Event, track: Track) => {
   e.stopPropagation()
   emit('track-play', track.id)
+}
+
+const handleCardAdd = (e: MouseEvent, track: Track) => {
+  e.stopPropagation()
+  emit('track-add', track.id, e)
 }
 </script>
 
@@ -108,15 +114,35 @@ const handleCardPlay = (e: Event, track: Track) => {
               <!-- P主 -->
               <p class="text-xs text-white/50 line-clamp-1">{{ track.artist }}</p>
             </div>
-            <!-- Hover 播放按钮 -->
+            <!-- Hover Play/Add Buttons -->
             <div
-              class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/30 backdrop-blur-sm"
-              @click.stop="handleCardPlay($event, track)"
+              class="absolute inset-0 flex items-center justify-center gap-4 opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-sm"
             >
               <button
-                class="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center hover:bg-white/30 transition-colors"
+                class="w-14 h-14 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center hover:bg-white/20 transition-colors shadow-lg"
+                title="加入播放列表"
+                @click.stop="handleCardAdd($event, track)"
               >
-                <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <svg
+                  class="w-7 h-7 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                  />
+                </svg>
+              </button>
+              <button
+                class="w-14 h-14 rounded-full bg-emerald-400/90 backdrop-blur-sm flex items-center justify-center hover:bg-emerald-400 transition-colors shadow-lg"
+                title="立即播放"
+                @click.stop="handleCardPlay($event, track)"
+              >
+                <svg class="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M8 5v14l11-7z" />
                 </svg>
               </button>
