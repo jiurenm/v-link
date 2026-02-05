@@ -40,8 +40,6 @@ export function useProducerInfo() {
 
       const producer = mapVocaDBArtistToProducer(details)
 
-      console.log(producer)
-
       // If illustrator has Pixiv ID, fetch artworks
       if (artistTypes.includes('Illustrator') && producer.pixivId) {
         console.log(
@@ -65,7 +63,6 @@ export function useProducerInfo() {
    * Fetch producer and illustrator info for a track
    */
   async function fetchProducerInfo(track: Track | null) {
-    console.log(track)
     if (!track) {
       producerInfo.value = null
       return
@@ -135,7 +132,6 @@ export function useProducerInfo() {
     try {
       // 3. Fetch Bilibili Info
       const videoInfo = await getVideoInfo(bvid)
-      console.log(videoInfo)
       if (!videoInfo) {
         return
       }
@@ -143,8 +139,6 @@ export function useProducerInfo() {
       // 4. Parse Description
       const producerName = extractProducerNameFromDesc(videoInfo.desc, videoInfo.desc_v2)
       const illustratorName = extractIllustratorNameFromDesc(videoInfo.desc)
-
-      console.log(producerName, illustratorName)
 
       const newCredits: { producer?: string; illustrator?: string } = {}
 
