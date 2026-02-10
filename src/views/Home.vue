@@ -43,39 +43,54 @@ const recentlyUpdated = ref<Track[]>([])
 const groupTracks = ref<Record<string, Track[]>>({})
 
 // 从正式数据初始化
-onMounted(async () => {
-  const tracks = await fetchTracks()
-  allTracks.value = tracks
+const isLoading = ref(true)
 
-  // 按总播放量排序，取前9首作为热门榜单
-  topTrends.value = [...tracks]
-    .sort((a, b) => (b.total_views || 0) - (a.total_views || 0))
-    .slice(0, 9)
+const refreshData = async () => {
+  isLoading.value = true
+  try {
+    const tracks = await fetchTracks()
+    allTracks.value = tracks
 
-  // 按 updated_at 排序，取前 12 首作为最近更新
-  recentlyUpdated.value = [...tracks]
-    .sort((a, b) => (b.updated_at || 0) - (a.updated_at || 0))
-    .slice(0, 12)
+    // 按总播放量排序，取前9首作为热门榜单
+    topTrends.value = [...tracks]
+      .sort((a, b) => (b.total_views || 0) - (a.total_views || 0))
+      .slice(0, 9)
 
-  // 按团体分组（排除 Other）
-  const grouped: Record<string, Track[]> = {}
-  tracks.forEach((track) => {
-    const group = track.pjsk_meta?.main_group
-    if (group && group !== 'Other') {
-      if (!grouped[group]) {
-        grouped[group] = []
+    // 按 updated_at 排序，取前 12 首作为最近更新
+    recentlyUpdated.value = [...tracks]
+      .sort((a, b) => (b.updated_at || 0) - (a.updated_at || 0))
+      .slice(0, 12)
+
+    // 按团体分组（排除 Other）
+    const grouped: Record<string, Track[]> = {}
+    tracks.forEach((track) => {
+      const group = track.pjsk_meta?.main_group
+      if (group && group !== 'Other') {
+        if (!grouped[group]) {
+          grouped[group] = []
+        }
+        grouped[group].push(track)
       }
-      grouped[group].push(track)
-    }
-  })
+    })
 
-  // 每个团体取前6首
-  Object.keys(grouped).forEach((group) => {
-    const tracks = grouped[group]
-    if (tracks && Array.isArray(tracks)) {
-      groupTracks.value[group] = tracks.slice(0, 6)
-    }
-  })
+    // 每个团体取前6首
+    Object.keys(grouped).forEach((group) => {
+      const tracks = grouped[group]
+      if (tracks && Array.isArray(tracks)) {
+        groupTracks.value[group] = tracks.slice(0, 6)
+      }
+    })
+  } finally {
+    // 延迟一点以展示过渡效果
+    setTimeout(() => {
+      isLoading.value = false
+    }, 500)
+  }
+}
+
+// 从正式数据初始化
+onMounted(() => {
+  refreshData()
 })
 
 const goToPlayer = (id: string, onlyQueue = false, event?: MouseEvent) => {
@@ -115,35 +130,85 @@ const sortedGroups = computed(() => {
 
 <template>
   <div class="min-h-screen bg-[#0a0a0f] text-white pb-24">
-    <NavBar />
+    <NavBar>
+      <template #actions>
+        <button
+          @click="refreshData"
+          class="p-2 rounded-full hover:bg-white/10 transition-colors group"
+          :disabled="isLoading"
+          title="刷新数据"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-5 w-5 text-white/70 group-hover:text-primary transition-colors"
+            :class="{ 'animate-spin': isLoading }"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+            />
+          </svg>
+        </button>
+      </template>
+    </NavBar>
 
-    <!-- 全站热门榜单 -->
-    <GlobalTopTrends
-      :tracks="topTrends"
-      @track-click="goToPlayer"
-      @track-play="goToPlayer"
-      @track-add="(id, event) => goToPlayer(id, true, event)"
-    />
+    <Transition name="fade" mode="out-in">
+      <div v-if="isLoading" class="flex items-center justify-center min-h-[60vh]">
+        <div class="flex flex-col items-center gap-4">
+          <div
+            class="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin"
+          ></div>
+          <div class="text-white/50 text-sm animate-pulse">Loading data...</div>
+        </div>
+      </div>
 
-    <!-- 最近更新 -->
-    <RecentlyUpdated
-      :tracks="recentlyUpdated"
-      @track-click="goToPlayer"
-      @track-play="goToPlayer"
-      @track-add="(id, event) => goToPlayer(id, true, event)"
-    />
+      <div v-else>
+        <!-- 全站热门榜单 -->
+        <GlobalTopTrends
+          :tracks="topTrends"
+          @track-click="goToPlayer"
+          @track-play="goToPlayer"
+          @track-add="(id, event) => goToPlayer(id, true, event)"
+        />
 
-    <!-- 团体沉浸式分区 -->
-    <GroupImmersiveZone
-      v-for="groupName in sortedGroups"
-      :key="groupName"
-      :group-name="groupName"
-      :tracks="groupTracks[groupName] || []"
-      :glow-color="groupColors[groupName] || '#888888'"
-      :glow-position="groupGlowPositions[groupName] || 'left'"
-      @track-click="goToPlayer"
-      @track-play="goToPlayer"
-      @track-add="(id, event) => goToPlayer(id, true, event)"
-    />
+        <!-- 最近更新 -->
+        <RecentlyUpdated
+          :tracks="recentlyUpdated"
+          @track-click="goToPlayer"
+          @track-play="goToPlayer"
+          @track-add="(id, event) => goToPlayer(id, true, event)"
+        />
+
+        <!-- 团体沉浸式分区 -->
+        <GroupImmersiveZone
+          v-for="groupName in sortedGroups"
+          :key="groupName"
+          :group-name="groupName"
+          :tracks="groupTracks[groupName] || []"
+          :glow-color="groupColors[groupName] || '#888888'"
+          :glow-position="groupGlowPositions[groupName] || 'left'"
+          @track-click="goToPlayer"
+          @track-play="goToPlayer"
+          @track-add="(id, event) => goToPlayer(id, true, event)"
+        />
+      </div>
+    </Transition>
   </div>
 </template>
+
+<style scoped>
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+</style>

@@ -51,6 +51,7 @@ const emit = defineEmits<{
           <a href="#" class="hover:text-primary transition-colors">合集</a>
           <a href="#" class="hover:text-primary transition-colors">排行榜</a>
         </div>
+        <slot name="actions" />
         <button
           v-if="showSearch"
           @click="emit('search')"
