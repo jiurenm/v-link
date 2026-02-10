@@ -66,13 +66,13 @@ const handleCardAdd = (e: MouseEvent, track: Track) => {
             {{ groupName }}
           </h2>
         </div>
-        <a
-          href="#"
+        <router-link
+          :to="{ path: '/explore', query: { group: groupName } }"
           class="text-[10px] font-bold tracking-widest hover:underline transition-opacity opacity-60 hover:opacity-100"
           :style="{ color: glowColor }"
         >
           EXPLORE GROUP
-        </a>
+        </router-link>
       </div>
     </div>
 

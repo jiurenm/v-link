@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+
 interface Props {
   title?: string
   showBack?: boolean
@@ -21,6 +24,9 @@ const emit = defineEmits<{
   user: []
   menu: []
 }>()
+
+const route = useRoute()
+const isExploreActive = computed(() => route.name === 'explore')
 </script>
 
 <template>
@@ -41,13 +47,22 @@ const emit = defineEmits<{
         </svg>
         <span>返回</span>
       </button>
-      <div v-else class="text-xl font-black italic tracking-tighter text-primary logo-breathing">
+      <router-link
+        v-else
+        to="/"
+        class="text-xl font-black italic tracking-tighter text-primary logo-breathing no-underline"
+      >
         V-LINK <span class="text-white/20 font-light">CORE</span>
-      </div>
+      </router-link>
       <h1 v-if="showBack" class="text-xl font-bold text-white">{{ title }}</h1>
       <div class="flex items-center gap-6">
         <div v-if="!showBack" class="hidden md:flex gap-8 text-sm font-medium text-white/50">
-          <a href="#" class="hover:text-primary transition-colors">探索</a>
+          <router-link
+            to="/explore"
+            class="transition-colors"
+            :class="isExploreActive ? 'text-primary font-semibold' : 'hover:text-primary'"
+            >探索</router-link
+          >
           <a href="#" class="hover:text-primary transition-colors">合集</a>
           <a href="#" class="hover:text-primary transition-colors">排行榜</a>
         </div>
