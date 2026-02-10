@@ -67,6 +67,11 @@ const toggleVersionType = (type: string) => {
   activeVersionType.value = activeVersionType.value === type ? '' : type
   emit('update:versionType', activeVersionType.value)
 }
+
+const clearSearch = () => {
+  searchQuery.value = ''
+  emit('update:search', '')
+}
 </script>
 
 <template>
@@ -87,14 +92,7 @@ const toggleVersionType = (type: string) => {
         placeholder="搜索歌曲、艺术家..."
         class="search-input"
       />
-      <button
-        v-if="searchQuery"
-        @click="
-          searchQuery = ''
-          emit('update:search', '')
-        "
-        class="clear-btn"
-      >
+      <button v-if="searchQuery" @click="clearSearch" class="clear-btn">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             stroke-linecap="round"

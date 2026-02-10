@@ -73,11 +73,12 @@ const refreshData = async () => {
       }
     })
 
-    // 每个团体取前6首
+    // 每个团体随机取前6首
     Object.keys(grouped).forEach((group) => {
       const tracks = grouped[group]
       if (tracks && Array.isArray(tracks)) {
-        groupTracks.value[group] = tracks.slice(0, 6)
+        const shuffled = [...tracks].sort(() => Math.random() - 0.5)
+        groupTracks.value[group] = shuffled.slice(0, 6)
       }
     })
   } finally {
