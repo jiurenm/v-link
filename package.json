@@ -7,11 +7,41 @@
   "engines": {
     "node": "^20.19.0 || >=22.12.0"
   },
+  "build": {
+    "appId": "com.vlink.app",
+    "productName": "VLink",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "out/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "mac": {
+      "target": "dmg"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
+  },
   "scripts": {
     "dev": "vite",
     "dev:electron": "electron-vite dev",
     "build": "run-p type-check \"build-only {@}\" --",
+    "build:renderer": "vite build",
     "build:electron": "electron-vite build",
+    "dist": "run-s build:renderer build:electron && electron-builder",
     "preview": "vite preview",
     "preview:electron": "electron-vite preview",
     "test:unit": "vitest",
@@ -23,14 +53,14 @@
     "format": "prettier --write --experimental-cli src/"
   },
   "dependencies": {
+    "@electron-toolkit/preload": "^3.0.2",
+    "@electron-toolkit/utils": "^4.0.0",
     "dashjs": "^5.1.1",
     "pinia": "^3.0.4",
     "vue": "^3.5.26",
     "vue-router": "^4.6.4"
   },
   "devDependencies": {
-    "@electron-toolkit/preload": "^3.0.2",
-    "@electron-toolkit/utils": "^4.0.0",
     "@tailwindcss/vite": "^4.1.18",
     "@tsconfig/node24": "^24.0.3",
     "@types/jsdom": "^27.0.0",
@@ -43,6 +73,7 @@
     "@vue/tsconfig": "^0.8.1",
     "autoprefixer": "^10.4.23",
     "electron": "^40.1.0",
+    "electron-builder": "^26.7.0",
     "electron-vite": "^5.0.0",
     "eslint": "^9.39.2",
     "eslint-plugin-oxlint": "~1.35.0",
