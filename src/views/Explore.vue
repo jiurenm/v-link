@@ -17,6 +17,8 @@ const route = useRoute()
 const playerStore = usePlayerStore()
 const uiStore = useUIStore()
 
+const hasPlayer = computed(() => !!playerStore.currentTrack)
+
 const allTracks = ref<Track[]>([])
 const isLoading = ref(true)
 
@@ -173,7 +175,13 @@ onUnmounted(() => {
 
     <!-- 回到顶部按钮 -->
     <Transition name="back-top">
-      <button v-if="showBackTop" @click="scrollToTop" class="back-top-btn" title="回到顶部">
+      <button
+        v-if="showBackTop"
+        @click="scrollToTop"
+        class="back-top-btn"
+        :class="{ 'has-player': hasPlayer }"
+        title="回到顶部"
+      >
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
         </svg>
@@ -254,6 +262,11 @@ onUnmounted(() => {
   background: #39c5bb;
   transform: translateY(-4px);
   box-shadow: 0 8px 20px rgba(57, 197, 187, 0.4);
+}
+
+.back-top-btn.has-player {
+  bottom: 112px;
+  /* 32px + 80px (player bar height) */
 }
 
 .back-top-enter-active,
