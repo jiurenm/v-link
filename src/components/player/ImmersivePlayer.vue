@@ -340,11 +340,12 @@ onUnmounted(() => {
     <div class="relative z-10 flex flex-col pb-4" style="height: 100vh; box-sizing: border-box">
       <!-- A. Canvas Area (48% 高度) - 居中布局 -->
       <div
-        class="flex-shrink-0 flex items-center justify-center px-4 pt-10 pb-3"
-        style="height: 48vh"
+        class="flex-shrink-0 flex items-center justify-center px-4 pt-6 sm:pt-10 pb-3"
+        style="height: 35vh"
       >
+        <!-- 移动端使用简化布局 -->
         <div class="flex items-center w-full max-w-7xl gap-4">
-          <!-- 左侧厨力插件 -->
+          <!-- 左侧厨力插件（仅桌面） -->
           <div class="hidden lg:flex flex-col items-center justify-center flex-shrink-0 w-64">
             <div
               v-if="track?.pjsk_meta?.main_group"
@@ -439,12 +440,15 @@ onUnmounted(() => {
       </div>
 
       <!-- C. Metadata & Leek Bar (36% 高度) -->
-      <div class="flex-1 overflow-y-auto px-6 pt-6 scrollbar-hide" style="min-height: 0">
+      <div
+        class="flex-1 overflow-y-auto px-4 sm:px-6 pt-4 sm:pt-6 scrollbar-hide"
+        style="min-height: 0"
+      >
         <div class="max-w-2xl mx-auto space-y-8">
           <!-- 歌曲信息卡片 -->
-          <div class="glass-card p-8 rounded-2xl text-center">
+          <div class="glass-card p-4 sm:p-8 rounded-2xl text-center">
             <h2
-              class="text-4xl font-bold text-white mb-6"
+              class="text-2xl sm:text-4xl font-bold text-white mb-4 sm:mb-6"
               style="
                 text-shadow:
                   0 2px 8px rgba(0, 0, 0, 0.5),

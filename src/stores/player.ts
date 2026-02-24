@@ -86,6 +86,9 @@ export const usePlayerStore = defineStore('player', () => {
   // 播放器页面是否处于激活状态（用于控制视频 Teleport）
   const isPlayerActive = ref(false)
 
+  // 播放列表弹窗状态
+  const showPlaylistModal = ref(false)
+
   // 计算当前播放的歌曲
   const currentTrack = computed((): Track | null => {
     if (queue.value.length === 0) {
@@ -299,6 +302,11 @@ export const usePlayerStore = defineStore('player', () => {
     isPlayerActive.value = active
   }
 
+  // 切换播放列表弹窗
+  function togglePlaylistModal() {
+    showPlaylistModal.value = !showPlaylistModal.value
+  }
+
   return {
     // 状态
     queue,
@@ -330,5 +338,7 @@ export const usePlayerStore = defineStore('player', () => {
     switchVersion,
     isPlayerActive,
     setPlayerActive,
+    showPlaylistModal,
+    togglePlaylistModal,
   }
 })

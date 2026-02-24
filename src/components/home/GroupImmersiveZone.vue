@@ -45,7 +45,10 @@ const handleCardAdd = (e: MouseEvent, track: Track) => {
 </script>
 
 <template>
-  <section class="relative mt-20 overflow-hidden" :style="{ '--shadow-color': `${glowColor}66` }">
+  <section
+    class="relative mt-12 sm:mt-20 overflow-hidden"
+    :style="{ '--shadow-color': `${glowColor}66` }"
+  >
     <!-- 动态背景光 -->
     <div
       class="absolute w-[600px] h-[600px] rounded-full filter blur-[120px] opacity-10 -z-10 pointer-events-none"
@@ -62,7 +65,10 @@ const handleCardAdd = (e: MouseEvent, track: Track) => {
         :class="glowPosition === 'right' ? 'flex-row-reverse' : ''"
       >
         <div :class="glowPosition === 'right' ? 'text-right' : ''">
-          <h2 class="text-4xl font-black italic tracking-tighter" :style="{ color: glowColor }">
+          <h2
+            class="text-2xl sm:text-4xl font-black italic tracking-tighter"
+            :style="{ color: glowColor }"
+          >
             {{ groupName }}
           </h2>
         </div>
@@ -84,7 +90,7 @@ const handleCardAdd = (e: MouseEvent, track: Track) => {
         <div
           v-for="track in tracks"
           :key="track.id"
-          class="group-card flex-none w-64 cursor-pointer snap-start"
+          class="group-card flex-none w-48 sm:w-64 cursor-pointer snap-start"
           @click="handleCardClick(track)"
         >
           <div class="relative aspect-square rounded-[2.5rem] overflow-hidden">

@@ -30,7 +30,9 @@ const isExploreActive = computed(() => route.name === 'explore')
 </script>
 
 <template>
-  <nav class="sticky top-0 z-50 backdrop-blur-lg bg-[#06090e]/80 px-6 py-4 border-b border-white/5">
+  <nav
+    class="sticky top-0 z-50 backdrop-blur-lg bg-[#06090e]/80 px-4 sm:px-6 py-3 sm:py-4 border-b border-white/5"
+  >
     <div class="max-w-7xl mx-auto flex items-center justify-between">
       <button
         v-if="showBack"
@@ -70,7 +72,7 @@ const isExploreActive = computed(() => route.name === 'explore')
         <button
           v-if="showSearch"
           @click="emit('search')"
-          class="relative text-white/80 hover:text-white transition-colors icon-glow"
+          class="hidden sm:block relative text-white/80 hover:text-white transition-colors icon-glow"
         >
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
@@ -84,7 +86,7 @@ const isExploreActive = computed(() => route.name === 'explore')
         <button
           v-if="showUser"
           @click="emit('user')"
-          class="relative text-white/80 hover:text-white transition-colors icon-glow"
+          class="hidden sm:block relative text-white/80 hover:text-white transition-colors icon-glow"
         >
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path

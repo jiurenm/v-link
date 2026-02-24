@@ -20,7 +20,34 @@
   --color-accent-purple: #884499;
 }
 
+/* Safe Area 支持 */
+:root {
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* 移动端全局优化 */
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: contain;
+}
+
+body {
+  overflow-x: hidden;
+}
+
 /* 隐藏滚动条 */
 ::-webkit-scrollbar {
   display: none;
+}
+
+/* 移动端选择和长按优化 */
+@media (max-width: 767px) {
+  img {
+    -webkit-user-drag: none;
+    user-select: none;
+  }
 }

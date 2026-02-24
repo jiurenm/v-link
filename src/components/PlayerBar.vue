@@ -150,7 +150,7 @@ onUnmounted(() => {
   <div
     v-if="currentTrack"
     ref="playerBarRef"
-    class="fixed bottom-0 left-0 right-0 z-50 bg-black/40 backdrop-blur-xl border-t border-white/10"
+    class="fixed bottom-0 left-0 right-0 z-50 bg-black/40 backdrop-blur-xl border-t border-white/10 mobile-player-bar"
     :style="{
       transform: isSwipeUp ? `translateY(-${swipeOffset}px)` : '',
       transition: isSwipeUp ? '' : 'transform 0.2s ease-out',
@@ -330,4 +330,11 @@ onUnmounted(() => {
   </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+/* 移动端 PlayerBar 上移，给 MobileTabBar 让路 */
+@media (max-width: 767px) {
+  .mobile-player-bar {
+    bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+  }
+}
+</style>

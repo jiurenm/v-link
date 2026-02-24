@@ -130,7 +130,7 @@ onUnmounted(() => {
     <!-- 页面标题区 -->
     <header class="explore-header">
       <div class="header-glow"></div>
-      <div class="max-w-7xl mx-auto px-6 relative z-10">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 relative z-10">
         <h1 class="page-title">
           EXPLORE
           <span class="title-accent">.</span>
@@ -149,7 +149,7 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <div v-else class="max-w-7xl mx-auto px-6 py-8">
+      <div v-else class="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         <!-- 筛选栏 -->
         <ExploreFilterBar
           :total-count="allTracks.length"
@@ -193,8 +193,14 @@ onUnmounted(() => {
 <style scoped>
 .explore-header {
   position: relative;
-  padding: 48px 0 32px;
+  padding: 32px 0 24px;
   overflow: hidden;
+}
+
+@media (min-width: 640px) {
+  .explore-header {
+    padding: 48px 0 32px;
+  }
 }
 
 .header-glow {
@@ -209,13 +215,20 @@ onUnmounted(() => {
 }
 
 .page-title {
-  font-size: 48px;
+  font-size: 32px;
   font-weight: 900;
   letter-spacing: -0.04em;
   font-style: italic;
   color: white;
   line-height: 1;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
+}
+
+@media (min-width: 640px) {
+  .page-title {
+    font-size: 48px;
+    margin-bottom: 12px;
+  }
 }
 
 .title-accent {

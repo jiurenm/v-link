@@ -32,7 +32,7 @@ const getRankColor = (index: number): string => {
 </script>
 
 <template>
-  <section class="px-6 py-12 max-w-7xl mx-auto">
+  <section class="px-4 sm:px-6 py-8 sm:py-12 max-w-7xl mx-auto">
     <div class="flex items-center gap-3 mb-8">
       <div class="w-1 h-8 bg-primary"></div>
       <h2 class="text-2xl font-black italic uppercase tracking-widest text-white">
@@ -49,7 +49,7 @@ const getRankColor = (index: number): string => {
       >
         <!-- 大号半透明排名数字 -->
         <span
-          class="absolute left-4 text-8xl font-black italic opacity-10 select-none pointer-events-none transition-all group-hover:opacity-20"
+          class="absolute left-4 text-6xl sm:text-8xl font-black italic opacity-10 select-none pointer-events-none transition-all group-hover:opacity-20"
           :class="getRankColor(index)"
         >
           {{ String(index + 1).padStart(2, '0') }}
@@ -78,7 +78,7 @@ const getRankColor = (index: number): string => {
 
         <!-- Hover 时显示的播放按钮或链接 -->
         <div
-          class="absolute inset-0 flex items-center justify-center gap-4 opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-sm rounded-3xl z-20"
+          class="absolute inset-0 flex items-center justify-center gap-4 sm:opacity-0 sm:group-hover:opacity-100 opacity-0 active:opacity-100 transition-opacity bg-black/40 backdrop-blur-sm rounded-3xl z-20"
         >
           <button
             class="w-12 h-12 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center hover:bg-white/20 transition-colors"
