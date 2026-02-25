@@ -340,8 +340,7 @@ onUnmounted(() => {
     <div class="relative z-10 flex flex-col pb-4" style="height: 100vh; box-sizing: border-box">
       <!-- A. Canvas Area (48% 高度) - 居中布局 -->
       <div
-        class="flex-shrink-0 flex items-center justify-center px-4 pt-6 sm:pt-10 pb-3"
-        style="height: 35vh"
+        class="flex-shrink-0 flex items-center justify-center px-4 pt-6 sm:pt-10 pb-3 h-[35vh] lg:h-[48vh]"
       >
         <!-- 移动端使用简化布局 -->
         <div class="flex items-center w-full max-w-7xl gap-4">
