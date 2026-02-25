@@ -1,0 +1,24 @@
+{
+  "rewrites": [
+    {
+      "source": "/bili-api/(.*)",
+      "destination": "/api/bili-proxy"
+    },
+    {
+      "source": "/bili-video/(.*)",
+      "destination": "/api/bili-video-proxy"
+    },
+    {
+      "source": "/vocadb-api/(.*)",
+      "destination": "/api/vocadb-proxy"
+    },
+    {
+      "source": "/pixiv-api/(.*)",
+      "destination": "/api/pixiv-proxy"
+    },
+    {
+      "source": "/pjsekai/(.*)",
+      "destination": "/api/pjsekai-proxy"
+    }
+  ]
+}
